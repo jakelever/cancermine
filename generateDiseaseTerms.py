@@ -3,6 +3,7 @@ This script is used to build a word-list of relevant cancer specific terms from 
 """
 import argparse
 import sys
+import codecs
 import pronto
 from collections import defaultdict
 
@@ -80,7 +81,7 @@ if __name__ == '__main__':
 	cancerTerm = findTerm(ont,'cancer')
 
 	print "Processing"
-	with codecs.open(outFile,'w','utf8') as outF:
+	with codecs.open(args.outFile,'w','utf8') as outF:
 		# Skip down to the grandchildren of the cancer term and then find all their descendents (recursive children)
 		for term in cancerTerm.children.children.rchildren():
 			# Get the CUIDs for this term
@@ -104,6 +105,7 @@ if __name__ == '__main__':
 			# Then output to the file
 			line = "%s\t%s\t%s" % (term.id, term.name, "|".join(mmterms))
 			outF.write(line + "\n")
+	print "Successfully output to %s" % args.outFile
 
 		
 
