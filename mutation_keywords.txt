@@ -1,0 +1,106 @@
+activation
+activations
+amplification
+amplifications
+coding mutation
+coding mutations
+copy decrease
+copy gain
+copy gains
+copy increase
+copy increases
+copy loss
+copy losses
+copy lost
+copy number decrease
+copy number decreased
+copy number increase
+copy number increased
+deactivation
+deactivations
+delete
+deleted
+deletion
+deletions
+demethylated
+demethylation
+depletion
+depletions
+dominant negative
+dominant-negative
+frameshift
+frame shift
+frame-shift
+frame shift mutation
+frame-shift mutation
+frameshift mutation
+frame shift mutations
+frame-shift mutations
+frameshift mutations
+frameshifts
+frame shifts
+frame-shifts
+fusion
+fusions
+gain
+gained
+gain of function
+gain-of-function
+gains
+gains of function
+gof
+haploinsufficient
+haplo-insufficient
+hotspot
+hotspots
+insertion
+insertions
+lof
+loss
+loss of function
+loss-of-function
+lost
+methylated
+methylation
+missense
+missense mutation
+missense mutations
+nonsense
+nonsense mutation
+nonsense mutations
+nonsynonymous coding mutation
+nonsynonymous coding mutations
+nonsynonymous substitution
+nonsynonymous substitutions
+nucleotide mutation
+nucleotide mutations
+nucleotide substitution
+nucleotide substitutions
+overexpress
+over-express
+overexpressed
+over-expressed
+overexpression
+over-expression
+phosphorylation
+point mutated
+point mutation
+promoter mutation
+protein coding mutation
+single nucleotide variant
+snv
+suppression
+switch of function
+translocation
+translocations
+truncated
+truncated form
+truncating mutation
+truncation
+truncations
+underexpress
+under-express
+underexpressed
+under-expressed
+underexpression
+under-expression
