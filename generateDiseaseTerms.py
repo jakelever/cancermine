@@ -103,7 +103,7 @@ if __name__ == '__main__':
 			mmterms = sorted(list(set(mmterms)))
 
 			# Then output to the file
-			line = "%s\t%s\t%s" % (term.id, term.name, "|".join(mmterms))
+			line = "%s\t%s" % (term.id, "|".join(mmterms))
 			outF.write(line + "\n")
 	print "Successfully output to %s" % args.outFile
 

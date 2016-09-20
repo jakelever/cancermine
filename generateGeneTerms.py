@@ -16,7 +16,7 @@ def cleanupQuotes(text):
 		Text with quotes removed from start and end (if they existed) or original string (if not)
 	"""
 	if text.startswith('"') and text.endswith('"'):
-		return text[1:-2]
+		return text[1:-1]
 	else:
 	 	return text
 
@@ -51,7 +51,7 @@ if __name__ == '__main__':
 			noDuplicates = sorted(list(set(merged.split('|'))))
 
 			# Then output to the file
-			line = u"%s\t%s\t%s" % (hgnc_id, symbol, u"|".join(noDuplicates))
+			line = u"%s\t%s" % (hgnc_id, u"|".join(noDuplicates))
 			outF.write(line + "\n")
 
 	print "Successfully output to %s" % args.outFile
