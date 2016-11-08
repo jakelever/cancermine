@@ -205,7 +205,7 @@ def selectSentences(outFile, textInput, textSourceInfo):
 					locs.append((i,i+1))
 
 			for i,w in enumerate(words):
-				if w.lower().startswith("mir-") or w.lower().startswith("hsa-mir-"):
+				if w.lower().startswith("mir-") or w.lower().startswith("hsa-mir-") or w.lower().startswith("microrna-"):
 					termtypesAndids.append([('gene',['mrna'])])
 					terms.append((w,))
 					locs.append((i,i+1))
