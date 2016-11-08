@@ -17,6 +17,12 @@ def integerOrNone(text):
 	else:
 		return int(text)
 
+def file_len(fname):
+	with open(fname) as f:
+		for i, l in enumerate(f):
+			pass
+	return i + 1
+
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Converts the output of the SentenceSelector to the ST format expected by the annotator and by VERSE')
 	parser.add_argument('--sentencesFile',type=str,required=True,help='File containing sentences with PMID and entity information')
@@ -28,8 +34,17 @@ if __name__ == '__main__':
 	if not outDir.endswith('/'):
 		outDir += '/'
 
+	totalLineCount = file_len(args.sentencesFile)
+	nextPerc = 0.0
+
 	with codecs.open(args.sentencesFile,'r','utf-8') as inFile:
 		for sentenceid,line in enumerate(inFile):
+			perc = 100.0 * sentenceid / float(totalLineCount)
+			if perc > nextPerc:
+				print "%.1f%%" % perc
+				nextPerc += 1.0
+
+
 			split = line.rstrip().split('\t')
 			assert len(split) > 3
 			pmid = split[0]
