@@ -142,6 +142,7 @@ def selectSentences(outFile, textInput, textSourceInfo):
 
 	pmid = str(textSourceInfo['pmid'])
 	pmcid = str(textSourceInfo['pmcid'])
+	pubYear = str(textSourceInfo['pubYear'])
 
 	print "pmid:%s pmcid:%s" % (pmid,pmcid)
 
@@ -261,7 +262,7 @@ def selectSentences(outFile, textInput, textSourceInfo):
 				print "-"*30
 				#print textSourceInfo
 				#print sentence
-				out = [pmid,pmcid,unicode(sentence)]
+				out = [pmid,pmcid,pubYear,unicode(sentence)]
 				#for thesetypesAndIDs,term,(startT,endT) in zip(termtypesAndids,terms,locs):
 				for (startT,endT),term,thesetypesAndIDs in filtered:
 					for type,termid in thesetypesAndIDs:
