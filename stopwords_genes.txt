@@ -3,6 +3,7 @@ anova
 aromatase
 bars
 cis
+cox
 crest
 dbm
 emt
@@ -24,6 +25,7 @@ psa
 san
 scar
 spatial
+tnm
 traits
 tsa
 warts
