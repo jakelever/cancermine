@@ -408,11 +408,11 @@ if __name__ == "__main__":
 		with codecs.open(args.stopwordsFile, "r", "utf-8") as f4:
 			stopwords = [ line.strip() for line in f4 ]
 
-	print "Removing stopwords..."
-	for stopword in stopwords:
-		key = tuple(stopword.lower().split(' '))
-		if key in lookup:
-			del lookup[key]
+		print "Removing stopwords..."
+		for stopword in stopwords:
+			key = tuple(stopword.lower().split(' '))
+			if key in lookup:
+				del lookup[key]
 
 	if args.removeShortwords:
 		print "Removing short words..."
