@@ -36,9 +36,11 @@ if __name__ == '__main__':
 
 			# Get the relevant fields for the gene
 			taxonomy_id = split[0]
+			type_of_gene = split[9]
+
 
 			# Only select human genes
-			if taxonomy_id == '9606':
+			if taxonomy_id == '9606' and type_of_gene == 'protein-coding':
 				ncbi_id = split[1]
 				symbol = split[2]
 				synonyms = split[4].split('|')
