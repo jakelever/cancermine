@@ -114,6 +114,7 @@ if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser(description='Generate term list from Disease Ontology and UMLS Metathesarus for cancer-specific terms')
 	parser.add_argument('--diseaseOntologyFile', required=True, type=str, help='Path to the Disease Ontology OBO file')
+	parser.add_argument('--cancerStopwords',required=True,type=str,help='File containing cancer terms to ignore')
 	parser.add_argument('--umlsConceptFile', required=True, type=str, help='Path on the MRCONSO.RRF file in UMLS metathesaurus')
 	parser.add_argument('--outFile', required=True, type=str, help='Path to output wordlist file')
 	args = parser.parse_args()
@@ -124,6 +125,11 @@ if __name__ == '__main__':
 	print "Loading disease ontology..."
 	ont = pronto.Ontology(args.diseaseOntologyFile)
 	cancerTerm = findTerm(ont,'cancer')
+
+	print "Loading cancer stopwords..."
+	with codecs.open(args.cancerStopwords,'r','utf8') as f:
+		cancerstopwords = [ line.strip().lower() for line in f ]
+		cancerstopwords = set(cancerstopwords)
 
 	print "Processing"
 	with codecs.open(args.outFile,'w','utf8') as outF:
@@ -144,15 +150,19 @@ if __name__ == '__main__':
 			# Lowercase everything
 			mmterms = [ mmterm.lower() for mmterm in mmterms ]
 			
+			# Filter out general terms
+			mmterms = [ mmterm for mmterm in mmterms if not mmterm in cancerstopwords ]
+
 			# Add extra spellings and plurals
 			mmterms = augmentTermList(mmterms)
 
 			# Remove any duplicates and sort it
 			mmterms = sorted(list(set(mmterms)))
 
-			# Then output to the file
-			line = "%s\t%s" % (term.id, "|".join(mmterms))
-			outF.write(line + "\n")
+			if len(mmterms) > 0:
+				# Then output to the file
+				line = "%s\t%s" % (term.id, "|".join(mmterms))
+				outF.write(line + "\n")
 	print "Successfully output to %s" % args.outFile
 
 		
