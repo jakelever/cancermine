@@ -24,10 +24,15 @@ if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser(description='Generate term list from NCBI gene resource')
 	parser.add_argument('--ncbiGeneInfoFile', required=True, type=str, help='Path to NCBI Gene Info file')
+	parser.add_argument('--geneStopwords',required=True,type=str,help='Stopword file for genes')
 	parser.add_argument('--outFile', required=True, type=str, help='Path to output wordlist file')
 	args = parser.parse_args()
 
 	genes = []
+
+	with codecs.open(args.geneStopwords,'r','utf8') as f:
+		geneStopwords = [ line.strip().lower() for line in f ]
+		geneStopwords = set(geneStopwords)
 
 	print "Processing"
 	with codecs.open(args.ncbiGeneInfoFile,'r','utf8') as ncbiF:
@@ -58,19 +63,22 @@ if __name__ == '__main__':
 					continue
 
 				allNames = [symbol,nomenclature_symbol,nomenclature_full] + synonyms
-				allNames = [ x.strip() for x in allNames ]
+				allNames = [ x.strip().lower() for x in allNames ]
 				allNames = [ x for x in allNames if x ]
 				allNames = [ x for x in allNames if x != '-' ]
 				allNames = [ cleanupQuotes(x) for x in allNames ]
 
 				# Remove any duplicates
-				merged = '|'.join(allNames)
-				noDuplicates = sorted(list(set(merged.split('|'))))
+				noDuplicates = sorted(list(set(allNames)))
+				noDuplicates = [ g for g in noDuplicates if not g in geneStopwords ]
+				noDuplicates = [ g for g in noDuplicates if len(g) >= 3 ]
 
-				numeric_id = int(hugo_id.replace('HGNC:',''))
+				if len(noDuplicates) > 0:
 
-				gene = (numeric_id,hugo_id,noDuplicates)
-				genes.append(gene)
+					numeric_id = int(hugo_id.replace('HGNC:',''))
+
+					gene = (numeric_id,hugo_id,noDuplicates)
+					genes.append(gene)
 
 	genes = sorted(genes)
 
