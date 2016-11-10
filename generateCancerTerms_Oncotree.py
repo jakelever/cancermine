@@ -77,12 +77,18 @@ if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser(description='Generate term list from Oncotree and UMLS Metathesarus for cancer-specific terms')
 	parser.add_argument('--oncotreeFile', required=True, type=str, help='Path to the Oncotree file')
+	parser.add_argument('--cancerStopwords',required=True,type=str,help='File containing cancer terms to ignore')
 	parser.add_argument('--umlsConceptFile', required=True, type=str, help='Path on the MRCONSO.RRF file in UMLS metathesaurus')
 	parser.add_argument('--outFile', required=True, type=str, help='Path to output wordlist file')
 	args = parser.parse_args()
 
 	print "Loading metathesaurus..."
 	metathesaurus = loadMetathesaurus(args.umlsConceptFile)
+
+	print "Loading cancer stopwords..."
+	with codecs.open(args.cancerStopwords,'r','utf8') as f:
+		cancerstopwords = [ line.strip().lower() for line in f ]
+		cancerstopwords = set(cancerstopwords)
 
 	cancerTypes = []
 
@@ -107,14 +113,21 @@ if __name__ == '__main__':
 			if nciID == '' or umlsID == '':
 				continue
 
+			# Skip general term
+			if nciID == 'C9305':
+				continue
+
 			# Get the English terms for the metathesaurus
 			mmterms = metathesaurus[umlsID]
 
+			# Lowercase everything
+			mmterms = [ mmterm.lower() for mmterm in mmterms ]
+
+			# Filter out general terms
+			mmterms = [ mmterm for mmterm in mmterms if not mmterm in cancerstopwords ]
+
 			# Check that there are some terms
 			if len(mmterms) > 0:
-				# Lowercase everything
-				mmterms = [ mmterm.lower() for mmterm in mmterms ]
-				
 				# Add extra spellings and plurals
 				mmterms = augmentTermList(mmterms)
 
