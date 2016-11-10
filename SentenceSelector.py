@@ -20,6 +20,7 @@ def getPipeline():
 		props = Properties()
 		props.put("annotators", "tokenize, ssplit, pos, lemma, depparse");
 		pipeline = StanfordCoreNLP(props, False)
+		
 	return pipeline
 	
 	
@@ -153,6 +154,7 @@ def selectSentences(outFile, textInput, textSourceInfo):
 		text = text.strip().replace('\n', ' ').replace('\r',' ').replace('\t',' ')
 		text = text.replace(u'\u2028',' ').replace(u'\u2029',' ').replace(u'\u202F',' ').replace(u'\u2012',' ').replace(u'\u2010',' ')
 		text = "".join(ch for ch in text if unicodedata.category(ch)[0]!="C")
+		text = text.decode('utf-8','ignore').encode("utf-8")
 		text = text.strip()
 
 		#text = text.replace('-driven',' driven')
