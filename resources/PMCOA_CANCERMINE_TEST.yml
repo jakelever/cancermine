@@ -1,0 +1,4 @@
+name: PUBMED_CANCERMINE_TEST
+url: http://bcgsc.ca/downloads/jlever/PMC4706832.nxml
+type: dir
+format: pmcxml
