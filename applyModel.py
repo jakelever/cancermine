@@ -286,7 +286,9 @@ def now():
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Finds relations in Pubmed file')
 	parser.add_argument('--biocFile',required=True,help='BioC XML file to use')
-	parser.add_argument('--inModel',required=True)
+	parser.add_argument('--inModel_Driver',required=True)
+	parser.add_argument('--inModel_Oncogene',required=True)
+	parser.add_argument('--inModel_TumorSuppressor',required=True)
 	parser.add_argument('--filterTerms',required=True)
 	parser.add_argument('--outData',required=True)
 	parser.add_argument('--genes',required=True)
@@ -296,8 +298,13 @@ if __name__ == '__main__':
 
 	print("%s : start" % now())
 
-	with open(args.inModel,'rb') as f:
-		classifier = pickle.load(f)
+	models = {}
+	with open(args.inModel_Driver,'rb') as f:
+		models['driver'] = pickle.load(f)
+	with open(args.inModel_Oncogene,'rb') as f:
+		models['oncogene'] = pickle.load(f)
+	with open(args.inModel_TumorSuppressor,'rb') as f:
+		models['tumorsuppressor'] = pickle.load(f)
 
 	with codecs.open(args.filterTerms,'r','utf-8') as f:
 		filterTerms = [ line.strip().lower() for line in f ]
@@ -341,14 +348,16 @@ if __name__ == '__main__':
 
 		print("%s : entities added" % now())
 
-		startTime = time.time()
-		classifier.predict(corpus)
-		timers['predicted'] += time.time() - startTime
-
-		print("%s : predicted" % now())
-
-		startTime = time.time()
 		with codecs.open(args.outData,'a','utf-8') as outF:
+			startTime = time.time()
+			for modelname,model in models.items():
+				model.predict(corpus)
+			timers['predicted'] += time.time() - startTime
+
+			print("%s : predicted" % now())
+
+			startTime = time.time()
+
 			for doc in corpus.documents:
 				if len(doc.relations) == 0:
 					continue
@@ -382,9 +391,9 @@ if __name__ == '__main__':
 						outLine = "\t".join(outData)
 						outF.write(outLine+"\n")
 
-		timers['output'] += time.time() - startTime
+			timers['output'] += time.time() - startTime
 
-		print("%s : output" % now())
+			print("%s : output" % now())
 
 		#if corpusno > 5:
 		#	break
