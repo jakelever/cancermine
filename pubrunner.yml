@@ -1,0 +1,24 @@
+name: CancerMine
+version: 0.1
+url: https://github.com/jakelever/cancermine
+resources:
+   full:
+      - PUBMED:
+         format: bioc
+         removePMCOADuplicates: True
+      - PMCOA:
+         format: bioc
+   test:
+      - PUBMED_CANCERMINE_TEST:
+         format: bioc
+         rename: PUBMED
+         removePMCOADuplicates: True
+      - PMCOA_CANCERMINE_TEST:
+         format: bioc
+         rename: PMCOA
+run:
+   - python applyModel.py --biocFile {IN:PUBMED/%} --inModel cancermine.model --filterTerms filterTerms.txt --genes ../annotator/wordlists/terms_genes.txt --cancerTypes ../annotator/wordlists/terms_cancer.txt --outData {OUT:out/%.tsv}
+   - python applyModel.py --biocFile {IN:PMCOA/%} --inModel cancermine.model --filterTerms filterTerms.txt --genes ../annotator/wordlists/terms_genes.txt --cancerTypes ../annotator/wordlists/terms_cancer.txt --outData {OUT:out/%.tsv}
+   - cat {IN:out/*} > {OUT:cancermine.tsv}
+output: cancermine.tsv
+
