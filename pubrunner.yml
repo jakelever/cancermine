@@ -19,6 +19,6 @@ resources:
 run:
    - python applyModel.py --biocFile {IN:PUBMED/%} --inModel cancermine.model --filterTerms filterTerms.txt --genes ../annotator/wordlists/terms_genes.txt --cancerTypes ../annotator/wordlists/terms_cancer.txt --outData {OUT:out/%.tsv}
    - python applyModel.py --biocFile {IN:PMCOA/%} --inModel cancermine.model --filterTerms filterTerms.txt --genes ../annotator/wordlists/terms_genes.txt --cancerTypes ../annotator/wordlists/terms_cancer.txt --outData {OUT:out/%.tsv}
-   - cat {IN:out/*} > {OUT:cancermine.tsv}
+   - cat header.tsv {IN:out/*} > {OUT:cancermine.tsv}
 output: cancermine.tsv
 
