@@ -15,7 +15,8 @@ if __name__ == '__main__':
 	trainCorpus = kindred.loadDir(dataFormat='standoff',directory=args.inTrain)
 
 	print("Doing training")
-	classifier = kindred.RelationClassifier(threshold=0.9)
+	features = "entityTypes,unigramsBetweenEntities,bigrams,dependencyPathEdges,dependencyPathEdgesNearEntities".split(',')
+	classifier = kindred.RelationClassifier(classifierType='LogisticRegression',threshold=0.8,features=features,acceptedEntityPairs=[('cancer','gene')])
 	classifier.train(trainCorpus)
 
 	print("Saving classifer")
