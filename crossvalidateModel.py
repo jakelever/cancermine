@@ -7,6 +7,7 @@ if __name__ == '__main__':
 	parser.add_argument('--inTrain',type=str,required=True)
 	parser.add_argument('--threshold',type=float,required=True)
 	parser.add_argument('--features',type=str,required=True)
+	parser.add_argument('--relationTypes',type=str,required=True)
 	parser.add_argument('--outFile',type=str,required=True)
 	#parser.add_argument('--outModel',type=str,required=True)
 
@@ -15,6 +16,10 @@ if __name__ == '__main__':
 	print("Loading training")
 	corpus = kindred.loadDir(dataFormat='standoff',directory=args.inTrain)
 	#parser = kindred.Parser()
+
+	acceptedRelationTypes = set(args.relationTypes.split(','))
+	for doc in corpus.documents:
+		doc.relations = [ r for r in doc.relations if r.relationType in acceptedRelationTypes ]
 
 	f01scores,precisions,recalls = [],[],[]
 	for trainCorpus,validateCorpusGold in corpus.nfold_split(5):
