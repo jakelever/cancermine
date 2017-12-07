@@ -113,7 +113,7 @@ def fusionGeneDetection(words, lookupDict):
 			terms.append(tuple(origWords[i:i+1]))
 			locs.append((i,i+1))
 			
-	return termtypesAndids,terms,locs
+	return locs,terms,termtypesAndids
 
 def cleanupVariant(variant):
 	variant = variant.upper().replace('P.','')
@@ -146,14 +146,14 @@ def getTermIDsAndLocations(np, lookupDict):
 				np[i:i+l] = [ "" for _ in range(l) ]
 
 	# Then return the found term IDs
-	return termtypesAndids,terms,locs
+	return locs,terms,termtypesAndids
 
 
 def processWords(words, lookup, detectFusionGenes=True, detectMicroRNA=True, detectAcronyms=True):
-	termtypesAndids,terms,locs = getTermIDsAndLocations(words,lookup)
+	locs,terms,termtypesAndids = getTermIDsAndLocations(words,lookup)
 
 	if detectFusionGenes:
-		fusionTermtypesAndids,fusionTerms,fusionLocs = fusionGeneDetection(words,lookup)
+		fusionLocs,fusionTerms,fusionTermtypesAndids = fusionGeneDetection(words,lookup)
 		
 		termtypesAndids += fusionTermtypesAndids
 		terms += fusionTerms
@@ -329,7 +329,7 @@ def cancermine(biocFile,inModel_Driver,inModel_Oncogene,inModel_TumorSuppressor,
 					endPos = sentence.tokens[endToken-1].endPos
 					loc = list(range(startToken,endToken))
 					for entityType,externalID in termtypesAndids:
-						e = kindred.Entity(entityType,text,[(startPos,endPos)],externalID=[externalID])
+						e = kindred.Entity(entityType,text,[(startPos,endPos)],externalID=externalID)
 						doc.addEntity(e)
 						sentence.addEntityWithLocation(e,loc)
 		timers['entitiesAdded'] += time.time() - startTime
