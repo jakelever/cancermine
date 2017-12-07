@@ -294,7 +294,7 @@ def cancermine(biocFile,inModel_Driver,inModel_Oncogene,inModel_TumorSuppressor,
 	with open(inModel_TumorSuppressor,'rb') as f:
 		models['tumorsuppressor'] = pickle.load(f)
 
-	with codecs.open(args.filterTerms,'r','utf-8') as f:
+	with codecs.open(filterTerms,'r','utf-8') as f:
 		filterTerms = [ line.strip().lower() for line in f ]
 
 	termLookup = loadWordlists({'gene':genes,'cancer':cancerTypes})
