@@ -283,43 +283,31 @@ def loadWordlists(entityTypesWithFilenames):
 def now():
 	return time.strftime("%Y-%m-%d %H:%M:%S")
 
-if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description='Finds relations in Pubmed file')
-	parser.add_argument('--biocFile',required=True,help='BioC XML file to use')
-	parser.add_argument('--inModel_Driver',required=True)
-	parser.add_argument('--inModel_Oncogene',required=True)
-	parser.add_argument('--inModel_TumorSuppressor',required=True)
-	parser.add_argument('--filterTerms',required=True)
-	parser.add_argument('--outData',required=True)
-	parser.add_argument('--genes',required=True)
-	parser.add_argument('--cancerTypes',required=True)
-
-	args = parser.parse_args()
-
+def cancermine(biocFile,inModel_Driver,inModel_Oncogene,inModel_TumorSuppressor,filterTerms,genes,cancerTypes,outData):
 	print("%s : start" % now())
 
 	models = {}
-	with open(args.inModel_Driver,'rb') as f:
+	with open(inModel_Driver,'rb') as f:
 		models['driver'] = pickle.load(f)
-	with open(args.inModel_Oncogene,'rb') as f:
+	with open(inModel_Oncogene,'rb') as f:
 		models['oncogene'] = pickle.load(f)
-	with open(args.inModel_TumorSuppressor,'rb') as f:
+	with open(inModel_TumorSuppressor,'rb') as f:
 		models['tumorsuppressor'] = pickle.load(f)
 
 	with codecs.open(args.filterTerms,'r','utf-8') as f:
 		filterTerms = [ line.strip().lower() for line in f ]
 
-	termLookup = loadWordlists({'gene':args.genes,'cancer':args.cancerTypes})
+	termLookup = loadWordlists({'gene':genes,'cancer':cancerTypes})
 	
 	# Truncate the output file
-	with codecs.open(args.outData,'w','utf-8') as outF:
+	with codecs.open(outData,'w','utf-8') as outF:
 		pass
 
 	timers = Counter()
 
 	print("%s : processing..." % now())
 	parser = kindred.Parser()
-	for corpusno,corpus in enumerate(kindred.iterLoadDataFromBioc(args.biocFile)):
+	for corpusno,corpus in enumerate(kindred.iterLoadDataFromBioc(biocFile)):
 		startTime = time.time()
 		parser.parse(corpus)
 		timers['parser'] += time.time() - startTime
@@ -348,7 +336,7 @@ if __name__ == '__main__':
 
 		print("%s : entities added" % now())
 
-		with codecs.open(args.outData,'a','utf-8') as outF:
+		with codecs.open(outData,'a','utf-8') as outF:
 			startTime = time.time()
 			for modelname,model in models.items():
 				model.predict(corpus)
@@ -405,3 +393,18 @@ if __name__ == '__main__':
 	for section,sectiontime in timers.items():
 		print("%s\t%f" % (section,sectiontime))
 
+
+if __name__ == '__main__':
+	parser = argparse.ArgumentParser(description='Finds relations in Pubmed file')
+	parser.add_argument('--biocFile',required=True,help='BioC XML file to use')
+	parser.add_argument('--inModel_Driver',required=True)
+	parser.add_argument('--inModel_Oncogene',required=True)
+	parser.add_argument('--inModel_TumorSuppressor',required=True)
+	parser.add_argument('--filterTerms',required=True)
+	parser.add_argument('--genes',required=True)
+	parser.add_argument('--cancerTypes',required=True)
+	parser.add_argument('--outData',required=True)
+
+	args = parser.parse_args()
+
+	cancermine(args.biocFile,args.inModel_Driver,args.inModel_Oncogene,args.inModel_TumorSuppressor,args.filterTerms,args.genes,args.cancerTypes,args.outData)
