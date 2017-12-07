@@ -149,7 +149,7 @@ def getTermIDsAndLocations(np, lookupDict):
 	return locs,terms,termtypesAndids
 
 
-def processWords(words, lookup, detectFusionGenes=True, detectMicroRNA=True, detectAcronyms=True):
+def processWords(words, lookup, detectFusionGenes=False, detectMicroRNA=False, detectAcronyms=False, mergeTerms=False):
 	locs,terms,termtypesAndids = getTermIDsAndLocations(words,lookup)
 
 	if detectFusionGenes:
@@ -172,66 +172,67 @@ def processWords(words, lookup, detectFusionGenes=True, detectMicroRNA=True, det
 	filtered = sorted(filtered)
 
 
-	# We'll attempt to merge terms (i.e. if a gene is referred to using two acronyms together)
-	# Example: Hepatocellular carcinoma (HCC) or HER2/ Neu or INK4B P15
-	locsToRemove = set()
-	for i in range(len(filtered)-1):
-		(startA,endA),termsA,termTypesAndIDsA = filtered[i]
-		(startB,endB),termsB,termTypesAndIDsB = filtered[i+1]
-		
-		# Check that the terms are beside each other or separated by a /,- or (
-		if startB == endA or (startB == (endA+1) and words[endA] in ['/','-','-LRB-','-RRB-']):
-			idsA,idsB = set(),set()
+	if mergeTerms:
+		# We'll attempt to merge terms (i.e. if a gene is referred to using two acronyms together)
+		# Example: Hepatocellular carcinoma (HCC) or HER2/ Neu or INK4B P15
+		locsToRemove = set()
+		for i in range(len(filtered)-1):
+			(startA,endA),termsA,termTypesAndIDsA = filtered[i]
+			(startB,endB),termsB,termTypesAndIDsB = filtered[i+1]
+			
+			# Check that the terms are beside each other or separated by a /,- or (
+			if startB == endA or (startB == (endA+1) and words[endA] in ['/','-','-LRB-','-RRB-']):
+				idsA,idsB = set(),set()
 
-			for termType, termIDs in termTypesAndIDsA:
-				for termID in termIDs:
-					idsA.add((termType,termID))
-			for termType, termIDs in termTypesAndIDsB:
-				for termID in termIDs:
-					idsB.add((termType,termID))
+				for termType, termIDs in termTypesAndIDsA:
+					for termID in termIDs:
+						idsA.add((termType,termID))
+				for termType, termIDs in termTypesAndIDsB:
+					for termID in termIDs:
+						idsB.add((termType,termID))
 
-			idsIntersection = idsA.intersection(idsB)
+				idsIntersection = idsA.intersection(idsB)
 
-			# Detect if the second term is in brackets e.g. HER2 (ERBB2)
-			firstTermInBrackets,secondTermInBrackets = False,False
-			if startB == (endA+1) and endB < len(words) and words[endA] == '-LRB-' and words[endB] == '-RRB-':
-				secondTermInBrackets = True
-			if startB == (endA+1) and startA > 0 and words[startA-1] == '-LRB-' and words[endA] == '-RRB-':
-				firstTermInBrackets = True
+				# Detect if the second term is in brackets e.g. HER2 (ERBB2)
+				firstTermInBrackets,secondTermInBrackets = False,False
+				if startB == (endA+1) and endB < len(words) and words[endA] == '-LRB-' and words[endB] == '-RRB-':
+					secondTermInBrackets = True
+				if startB == (endA+1) and startA > 0 and words[startA-1] == '-LRB-' and words[endA] == '-RRB-':
+					firstTermInBrackets = True
 
-			# The two terms share IDs so we're going to merge them
-			idsShared = (len(idsIntersection) > 0)
+				# The two terms share IDs so we're going to merge them
+				idsShared = (len(idsIntersection) > 0)
 
-			if idsShared:
-				groupedByType = defaultdict(list)
-				for termType,termID in idsIntersection:
-					groupedByType[termType].append(termID)
+				if idsShared:
+					groupedByType = defaultdict(list)
+					for termType,termID in idsIntersection:
+						groupedByType[termType].append(termID)
 
-				locsToRemove.add((startA,endA))
-				locsToRemove.add((startB,endB))
+					locsToRemove.add((startA,endA))
+					locsToRemove.add((startB,endB))
 
-				if secondTermInBrackets:
-					thisLocs = (startA,endB+1)
-					thisTerms = tuple(words[startA:endB+1])
-				elif firstTermInBrackets:
-					thisLocs = (startA-1,endB)
-					thisTerms = tuple(words[startA-1:endB])
-				else:
-					thisLocs = (startA,endB)
-					thisTerms = tuple(words[startA:endB])
+					if secondTermInBrackets:
+						thisLocs = (startA,endB+1)
+						thisTerms = tuple(words[startA:endB+1])
+					elif firstTermInBrackets:
+						thisLocs = (startA-1,endB)
+						thisTerms = tuple(words[startA-1:endB])
+					else:
+						thisLocs = (startA,endB)
+						thisTerms = tuple(words[startA:endB])
 
 
-				thisTermTypesAndIDs = [ (termType,sorted(termIDs)) for termType,termIDs in groupedByType.items() ]
+					thisTermTypesAndIDs = [ (termType,sorted(termIDs)) for termType,termIDs in groupedByType.items() ]
 
-				filtered.append((thisLocs,thisTerms,thisTermTypesAndIDs))
+					filtered.append((thisLocs,thisTerms,thisTermTypesAndIDs))
 
-	# Now we have to remove the terms marked for deletion in the previous section
-	filtered = [ (locs,terms,termtypesAndids) for locs,terms,termtypesAndids in filtered if not locs in locsToRemove]
-	filtered = sorted(filtered)
+		# Now we have to remove the terms marked for deletion in the previous section
+		filtered = [ (locs,terms,termtypesAndids) for locs,terms,termtypesAndids in filtered if not locs in locsToRemove]
+		filtered = sorted(filtered)
 
-	# And we'll check to see if there are any obvious acronyms
-	locsToRemove = set()
 	if detectAcronyms:
+		# And we'll check to see if there are any obvious acronyms
+		locsToRemove = set()
 		acronyms = acronymDetection(words)
 		for (wordsStart,wordsEnd,acronymLoc) in acronyms:
 			wordIsTerm = (wordsStart,wordsEnd) in locs
@@ -246,9 +247,9 @@ def processWords(words, lookup, detectFusionGenes=True, detectMicroRNA=True, det
 				locsToRemove.update(newLocsToRemove)
 			
 
-	# Now we have to remove the terms marked for deletion in the previous section
-	filtered = [ (locs,terms,termtypesAndids) for locs,terms,termtypesAndids in filtered if not locs in locsToRemove]
-	filtered = sorted(filtered)
+		# Now we have to remove the terms marked for deletion in the previous section
+		filtered = [ (locs,terms,termtypesAndids) for locs,terms,termtypesAndids in filtered if not locs in locsToRemove]
+		filtered = sorted(filtered)
 
 	return filtered
 
