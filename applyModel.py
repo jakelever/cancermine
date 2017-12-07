@@ -372,7 +372,7 @@ def cancermine(biocFile,inModel_Driver,inModel_Oncogene,inModel_TumorSuppressor,
 					for eID in relation.entityIDs:
 						entity = eID_to_entity[eID]
 						entityData.append(entity.text)
-						entityData.append(";".join(entity.externalID))
+						entityData.append(entity.externalID)
 
 					if doc.metadata["pmid"]:
 						m = doc.metadata
