@@ -14,7 +14,7 @@ def loadWordlists(entityTypesWithFilenames):
 		with codecs.open(filename,'r','utf-8') as f:
 			tempLookup = defaultdict(set)
 			for line in f:
-				termid,terms = line.strip().split('\t')
+				termid,singleterm,terms = line.strip().split('\t')
 				for term in terms.split('|'):
 					#tupleterm = tuple(term.split())
 					tupleterm = tuple([ token.text.lower() for token in nlp(term) ])
