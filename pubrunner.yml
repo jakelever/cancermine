@@ -17,8 +17,8 @@ resources:
          format: bioc
          rename: PMCOA
 run:
-   - python applyModel.py --biocFile {IN:PUBMED/%} --inModel_Driver cancermine.driver.model --inModel_Oncogene cancermine.oncogene.model --inModel_TumorSuppressor cancermine.tumorsuppressor.model --filterTerms filterTerms.txt --genes terms_genes.txt --cancerTypes terms_cancer.txt --outData {OUT:out/%.tsv}
-   - python applyModel.py --biocFile {IN:PMCOA/%} --inModel_Driver cancermine.driver.model --inModel_Oncogene cancermine.oncogene.model --inModel_TumorSuppressor cancermine.tumorsuppressor.model --filterTerms filterTerms.txt --genes terms_genes.txt --cancerTypes terms_cancer.txt --outData {OUT:out/%.tsv}
+   - python applyModel.py --biocFile {IN:PUBMED/%} --inModel_Driver cancermine.driver.model --inModel_Oncogene cancermine.oncogene.model --inModel_TumorSuppressor cancermine.tumorsuppressor.model --filterTerms filterTerms.txt --wordlistPickle terms.pickle --outData {OUT:out/%.tsv}
+   - python applyModel.py --biocFile {IN:PMCOA/%} --inModel_Driver cancermine.driver.model --inModel_Oncogene cancermine.oncogene.model --inModel_TumorSuppressor cancermine.tumorsuppressor.model --filterTerms filterTerms.txt --wordlistPickle terms.pickle --outData {OUT:out/%.tsv}
    - cat header.tsv {IN:out/*} > {OUT:cancermine.tsv}
 output: cancermine.tsv
 
