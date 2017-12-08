@@ -156,9 +156,11 @@ def processWords(words, lookup, detectFusionGenes=True, detectMicroRNA=True, det
 		for i,w in enumerate(words):
 			lw = w.lower()
 			if lw.startswith("mir-") or lw.startswith("hsa-mir-") or lw.startswith("microrna-") or (lw.startswith("mir") and len(lw) > 3 and lw[3] in string.digits):
-				termtypesAndids.append([('gene','mirna|'+w)])
-				terms.append((w,))
-				locs.append((i,i+1))
+				potentialLocs = (i,i+1)
+				if not potentialLocs in locs:
+					termtypesAndids.append([('gene','mirna|'+w)])
+					terms.append((w,))
+					locs.append((i,i+1))
 
 
 	filtered = zip(locs,terms,termtypesAndids)
