@@ -8,6 +8,9 @@ import time
 import re
 import string
 from collections import defaultdict,Counter
+import spacy
+
+nlp = spacy.load('en')
 
 def acronymMatch(words,pos,currentAcronym,atStart,subpos=None):
 	if len(currentAcronym) == 0:
@@ -50,8 +53,8 @@ def acronymMatch(words,pos,currentAcronym,atStart,subpos=None):
 def acronymDetection(words):
 	#print words
 	#sys.exit(0)
-	LRBs = [i for i, x in enumerate(words) if x == u'-LRB-']
-	RRBs = [i for i, x in enumerate(words) if x == u'-RRB-']
+	LRBs = [i for i, x in enumerate(words) if x == u'(']
+	RRBs = [i for i, x in enumerate(words) if x == u')']
 	acronyms = []
 	for i,j in itertools.product(LRBs,RRBs):
 		if j-i == 2:
@@ -84,13 +87,12 @@ def fusionGeneDetection(words, lookupDict):
 			key = (s,)
 			if key in lookupDict:
 				isGene = False
-				for type,ids in lookupDict[key]:
-					if type == 'gene':
-						for tmpid in ids:
-							lookupIDCounter[tmpid] += 1
+				for entityType,entityID in lookupDict[key]:
+					if entityType == 'gene':
+						for tmpID in entityID.split(';'):
+							lookupIDCounter[tmpID] += 1
 
-						idsTxt = ";".join(map(str,ids))
-						geneIDs.append(idsTxt)
+						geneIDs.append(entityID)
 						isGene = True
 						break
 				if not isGene:
@@ -109,18 +111,11 @@ def fusionGeneDetection(words, lookupDict):
 	
 		if allGenes:
 			#geneTxt = ",".join(map(str,geneIDs))
-			termtypesAndids.append([('gene',geneIDs)])
+			termtypesAndids.append([('gene','|'.join(geneIDs))])
 			terms.append(tuple(origWords[i:i+1]))
 			locs.append((i,i+1))
 			
 	return locs,terms,termtypesAndids
-
-def cleanupVariant(variant):
-	variant = variant.upper().replace('P.','')
-	aminoAcidInfo = [('ALA','A'),('ARG','R'),('ASN','N'),('ASP','D'),('CYS','C'),('GLU','E'),('GLN','Q'),('GLY','G'),('HIS','H'),('ILE','I'),('LEU','L'),('LYS','K'),('MET','M'),('PHE','F'),('PRO','P'),('SER','S'),('THR','T'),('TRP','W'),('TYR','Y'),('VAL','V')]
-	for longA,shortA in aminoAcidInfo:
-		variant = variant.replace(longA,shortA)
-	return variant
 
 def getTermIDsAndLocations(np, lookupDict):
 	termtypesAndids,terms,locs = [],[],[]
@@ -149,7 +144,7 @@ def getTermIDsAndLocations(np, lookupDict):
 	return locs,terms,termtypesAndids
 
 
-def processWords(words, lookup, detectFusionGenes=False, detectMicroRNA=False, detectAcronyms=False, mergeTerms=False):
+def processWords(words, lookup, detectFusionGenes=True, detectMicroRNA=True, detectAcronyms=True, mergeTerms=True):
 	locs,terms,termtypesAndids = getTermIDsAndLocations(words,lookup)
 
 	if detectFusionGenes:
@@ -163,7 +158,7 @@ def processWords(words, lookup, detectFusionGenes=False, detectMicroRNA=False, d
 		for i,w in enumerate(words):
 			lw = w.lower()
 			if lw.startswith("mir-") or lw.startswith("hsa-mir-") or lw.startswith("microrna-") or (lw.startswith("mir") and len(lw) > 3 and lw[3] in string.digits):
-				termtypesAndids.append([('gene',['mrna'])])
+				termtypesAndids.append([('gene','mirna|'+w)])
 				terms.append((w,))
 				locs.append((i,i+1))
 
@@ -181,23 +176,23 @@ def processWords(words, lookup, detectFusionGenes=False, detectMicroRNA=False, d
 			(startB,endB),termsB,termTypesAndIDsB = filtered[i+1]
 			
 			# Check that the terms are beside each other or separated by a /,- or (
-			if startB == endA or (startB == (endA+1) and words[endA] in ['/','-','-LRB-','-RRB-']):
+			if startB == endA or (startB == (endA+1) and words[endA] in ['/','-','(',')']):
 				idsA,idsB = set(),set()
 
 				for termType, termIDs in termTypesAndIDsA:
-					for termID in termIDs:
+					for termID in termIDs.split(';'):
 						idsA.add((termType,termID))
-				for termType, termIDs in termTypesAndIDsB:
-					for termID in termIDs:
+				for termType, termID in termTypesAndIDsB:
+					for termID in termIDs.split(';'):
 						idsB.add((termType,termID))
 
 				idsIntersection = idsA.intersection(idsB)
 
-				# Detect if the second term is in brackets e.g. HER2 (ERBB2)
+				# Detect if the either term is in brackets e.g. HER2 (ERBB2)
 				firstTermInBrackets,secondTermInBrackets = False,False
-				if startB == (endA+1) and endB < len(words) and words[endA] == '-LRB-' and words[endB] == '-RRB-':
+				if startB == (endA+1) and endB < len(words) and words[endA] == '(' and words[endB] == ')':
 					secondTermInBrackets = True
-				if startB == (endA+1) and startA > 0 and words[startA-1] == '-LRB-' and words[endA] == '-RRB-':
+				if startB == (endA+1) and startA > 0 and words[startA-1] == '(' and words[endA] == ')':
 					firstTermInBrackets = True
 
 				# The two terms share IDs so we're going to merge them
@@ -222,7 +217,7 @@ def processWords(words, lookup, detectFusionGenes=False, detectMicroRNA=False, d
 						thisTerms = tuple(words[startA:endB])
 
 
-					thisTermTypesAndIDs = [ (termType,sorted(termIDs)) for termType,termIDs in groupedByType.items() ]
+					thisTermTypesAndIDs = [ (termType,";".join(sorted(termIDs))) for termType,termIDs in groupedByType.items() ]
 
 					filtered.append((thisLocs,thisTerms,thisTermTypesAndIDs))
 
@@ -254,37 +249,30 @@ def processWords(words, lookup, detectFusionGenes=False, detectMicroRNA=False, d
 	return filtered
 
 
-def loadWordlist(filename):
-	lookup = defaultdict(set)
-	with codecs.open(filename,'r','utf-8') as f:
-		for line in f:
-			termid,terms = line.strip().split('\t')
-			for term in terms.split('|'):
-				tupleterm = tuple(term.split())
-				lookup[tupleterm].add(termid)
-
-	lookup = { k:sorted(list(kset)) for k,kset in lookup.items() }
-
-	return lookup
-
 def loadWordlists(entityTypesWithFilenames):
 	lookup = defaultdict(set)
 	for entityType,filename in entityTypesWithFilenames.items():
 		with codecs.open(filename,'r','utf-8') as f:
+			tempLookup = defaultdict(set)
 			for line in f:
-				termid,terms = line.lower().strip().split('\t')
+				termid,terms = line.strip().split('\t')
 				for term in terms.split('|'):
-					tupleterm = tuple(term.split())
-					lookup[tupleterm].add((entityType,termid))
+					#tupleterm = tuple(term.split())
+					tupleterm = tuple([ token.text.lower() for token in nlp(term) ])
+					#lookup[tupleterm].add((entityType,termid))
+					tempLookup[tupleterm].add(termid)
 
-	lookup = { k:sorted(list(kset)) for k,kset in lookup.items() }
+		for tupleterm,idlist in tempLookup.items():
+			lookup[tupleterm].add( (entityType,";".join(sorted(list(idlist)))) )
+
+	#lookup = { k:sorted(list(kset)) for k,kset in lookup.items() }
 
 	return lookup
 
 def now():
 	return time.strftime("%Y-%m-%d %H:%M:%S")
 
-def cancermine(biocFile,inModel_Driver,inModel_Oncogene,inModel_TumorSuppressor,filterTerms,genes,cancerTypes,outData):
+def cancermine(biocFile,inModel_Driver,inModel_Oncogene,inModel_TumorSuppressor,filterTerms,wordlistPickle,outData):
 	print("%s : start" % now())
 
 	models = {}
@@ -298,7 +286,9 @@ def cancermine(biocFile,inModel_Driver,inModel_Oncogene,inModel_TumorSuppressor,
 	with codecs.open(filterTerms,'r','utf-8') as f:
 		filterTerms = [ line.strip().lower() for line in f ]
 
-	termLookup = loadWordlists({'gene':genes,'cancer':cancerTypes})
+	with open(wordlistPickle,'rb') as f:
+		termLookup = pickle.load(f)
+	#termLookup = loadWordlists({'gene':genes,'cancer':cancerTypes})
 	
 	# Truncate the output file
 	with codecs.open(outData,'w','utf-8') as outF:
@@ -320,6 +310,7 @@ def cancermine(biocFile,inModel_Driver,inModel_Oncogene,inModel_TumorSuppressor,
 			sys.stdout.flush()
 			for sentence in doc.sentences:
 				words = [ t.word for t in sentence.tokens ]
+
 				extractedTermData = processWords(words,termLookup)
 				
 				for locs,terms,termtypesAndids in extractedTermData:
@@ -402,10 +393,9 @@ if __name__ == '__main__':
 	parser.add_argument('--inModel_Oncogene',required=True)
 	parser.add_argument('--inModel_TumorSuppressor',required=True)
 	parser.add_argument('--filterTerms',required=True)
-	parser.add_argument('--genes',required=True)
-	parser.add_argument('--cancerTypes',required=True)
+	parser.add_argument('--wordlistPickle',required=True)
 	parser.add_argument('--outData',required=True)
 
 	args = parser.parse_args()
 
-	cancermine(args.biocFile,args.inModel_Driver,args.inModel_Oncogene,args.inModel_TumorSuppressor,args.filterTerms,args.genes,args.cancerTypes,args.outData)
+	cancermine(args.biocFile,args.inModel_Driver,args.inModel_Oncogene,args.inModel_TumorSuppressor,args.filterTerms,args.wordlistPickle,args.outData)
