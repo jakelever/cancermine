@@ -1,13 +1,7 @@
-import sys
-import itertools
-import kindred
 import pickle
 import argparse
 import codecs
-import time
-import re
-import string
-from collections import defaultdict,Counter
+from collections import defaultdict
 import spacy
 
 nlp = spacy.load('en')
