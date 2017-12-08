@@ -13,12 +13,11 @@ def test_basicrun():
 	inModel_Oncogene = 'cancermine.oncogene.model'
 	inModel_TumorSuppressor = 'cancermine.tumorsuppressor.model'
 	filterTerms = 'filterTerms.txt'
-	genes = 'terms_genes.txt'
-	cancerTypes = 'terms_cancer.txt'
+	wordlistPickle = 'terms.pickle'
 	outData = 'tests/testDoc.bioc.out'
 
 	os.chdir(parentDir)
-	applyModel.cancermine(biocFile,inModel_Driver,inModel_Oncogene,inModel_TumorSuppressor,filterTerms,genes,cancerTypes,outData)
+	applyModel.cancermine(biocFile,inModel_Driver,inModel_Oncogene,inModel_TumorSuppressor,filterTerms,wordlistPickle,outData)
 
 if __name__ == '__main__':
 	test_basicrun()

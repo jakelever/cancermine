@@ -14,7 +14,13 @@
     <passage>
       <offset>0</offset>
       <text>
-      The EML4-ALK fusion gene is oncogenic in skin cancer.
+      The HOX1-MLL2 fusion gene is a tumor suppressor in colorectal cancer.
+      The HER2-neu gene is a tumor suppressor in skin cancer.
+      The HER2/neu gene is a tumor suppressor in glioblastoma.
+      mir-1 is a tumor suppressor in lung cancer.
+      mir-5 is a tumor suppressor in non-small-cell lung carcinoma (NSCLC).
+      HER2 (ERBB2) is a tumor suppressor in pancreatic cancer.
+      EGFR is a tumor suppressor in null cell acute lymphoblastic leukaemia (NCALL).
       </text>
       <infon key="section">abstract</infon>
     </passage>
