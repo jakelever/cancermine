@@ -81,7 +81,7 @@ def fusionGeneDetection(words, lookupDict):
 			
 		allGenes = True
 		
-		geneIDs = ['fusion']
+		geneIDs = ['combo']
 		lookupIDCounter = Counter()
 		for s in split:
 			key = (s,)
@@ -272,7 +272,25 @@ def loadWordlists(entityTypesWithFilenames):
 def now():
 	return time.strftime("%Y-%m-%d %H:%M:%S")
 
-def cancermine(biocFile,inModel_Driver,inModel_Oncogene,inModel_TumorSuppressor,filterTerms,wordlistPickle,outData):
+def getDefiniteTerm(text,externalID,IDToTerm):
+	definiteTerms = [ IDToTerm[eid] for eid in externalID.split(';') ]
+	definiteTerms = sorted(list(set(definiteTerms)))
+	if text.lower() in definiteTerms:
+		definiteTerm = text.lower()
+	else:
+		definiteTerm = ";".join(definiteTerms)
+	return definiteTerm
+
+def standardizeMIRName(externalID):
+	mirNumber = ""
+	for c in externalID:
+		if c in string.digits:
+			mirNumber += c
+	assert externalID.endswith(mirNumber)
+	definiteTerm = "miR-%s" % mirNumber
+	return definiteTerm
+
+def cancermine(biocFile,inModel_Driver,inModel_Oncogene,inModel_TumorSuppressor,filterTerms,wordlistPickle,genes,cancerTypes,outData):
 	print("%s : start" % now())
 
 	models = {}
@@ -282,6 +300,17 @@ def cancermine(biocFile,inModel_Driver,inModel_Oncogene,inModel_TumorSuppressor,
 		models['oncogene'] = pickle.load(f)
 	with open(inModel_TumorSuppressor,'rb') as f:
 		models['tumorsuppressor'] = pickle.load(f)
+
+	IDToTerm = {}
+	with codecs.open(genes,'r','utf-8') as f:
+		for line in f:
+			geneid,singleterm,_ = line.strip().split('\t')
+			IDToTerm[geneid] = singleterm
+
+	with codecs.open(cancerTypes,'r','utf-8') as f:
+		for line in f:
+			cancerid,singleterm,_ = line.strip().split('\t')
+			IDToTerm[cancerid] = singleterm
 
 	with codecs.open(filterTerms,'r','utf-8') as f:
 		filterTerms = [ line.strip().lower() for line in f ]
@@ -314,11 +343,12 @@ def cancermine(biocFile,inModel_Driver,inModel_Oncogene,inModel_TumorSuppressor,
 				extractedTermData = processWords(words,termLookup)
 				
 				for locs,terms,termtypesAndids in extractedTermData:
-					text = " ".join(terms)
+					#text = " ".join(terms)
 					startToken = locs[0]
 					endToken = locs[1]
 					startPos = sentence.tokens[startToken].startPos
 					endPos = sentence.tokens[endToken-1].endPos
+					text = doc.text[startPos:endPos]
 					loc = list(range(startToken,endToken))
 					for entityType,externalID in termtypesAndids:
 						e = kindred.Entity(entityType,text,[(startPos,endPos)],externalID=externalID)
@@ -362,8 +392,22 @@ def cancermine(biocFile,inModel_Driver,inModel_Oncogene,inModel_TumorSuppressor,
 					entityData = []
 					for eID in relation.entityIDs:
 						entity = eID_to_entity[eID]
-						entityData.append(entity.text)
 						entityData.append(entity.externalID)
+						entityData.append(entity.text)
+
+
+						if entity.externalID.startswith('combo'):
+							_,t1,t2 = entity.externalID.split('|')
+							d1 = getDefiniteTerm("",t1,IDToTerm)
+							d2 = getDefiniteTerm("",t2,IDToTerm)
+							definiteTerm = "%s|%s" % (d1,d2)
+						elif entity.externalID.startswith('mirna|'):
+							definiteTerm = standardizeMIRName(entity.externalID)
+						else:
+							definiteTerm = getDefiniteTerm(entity.text,entity.externalID,IDToTerm)
+
+						entityData.append(definiteTerm)
+
 
 					if doc.metadata["pmid"]:
 						m = doc.metadata
@@ -394,8 +438,10 @@ if __name__ == '__main__':
 	parser.add_argument('--inModel_TumorSuppressor',required=True)
 	parser.add_argument('--filterTerms',required=True)
 	parser.add_argument('--wordlistPickle',required=True)
+	parser.add_argument('--genes',required=True)
+	parser.add_argument('--cancerTypes',required=True)
 	parser.add_argument('--outData',required=True)
 
 	args = parser.parse_args()
 
-	cancermine(args.biocFile,args.inModel_Driver,args.inModel_Oncogene,args.inModel_TumorSuppressor,args.filterTerms,args.wordlistPickle,args.outData)
+	cancermine(args.biocFile,args.inModel_Driver,args.inModel_Oncogene,args.inModel_TumorSuppressor,args.filterTerms,args.wordlistPickle,args.genes,args.cancerTypes,args.outData)
