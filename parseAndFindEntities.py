@@ -147,10 +147,12 @@ def processWords(words, lookup, detectFusionGenes=True, detectMicroRNA=True, det
 
 	if detectFusionGenes:
 		fusionLocs,fusionTerms,fusionTermtypesAndids = fusionGeneDetection(words,lookup)
-		
-		termtypesAndids += fusionTermtypesAndids
-		terms += fusionTerms
-		locs += fusionLocs
+	
+		for floc,fterm,ftermtypesAndid in zip(fusionLocs,fusionTerms,fusionTermtypesAndids):
+			if not floc in locs:
+				locs.append(floc)
+				terms.append(fterm)
+				termtypesAndids.append(ftermtypesAndid)
 
 	if detectMicroRNA:
 		for i,w in enumerate(words):
@@ -333,7 +335,7 @@ def parseAndFindEntities(biocFile,filterTermsFile,wordlistPickle,outSentencesFil
 
 				if entityinSentence['cancer'] and entityinSentence['gene']:
 					tmpData = dict(doc.metadata)
-					tmpData['sentence'] = sentence.text
+					tmpData['sentence'] = sentence.text.strip()
 					outSentences.append(tmpData)
 
 		timers['entitiesAdded'] += time.time() - startTime
@@ -342,7 +344,7 @@ def parseAndFindEntities(biocFile,filterTermsFile,wordlistPickle,outSentencesFil
 		sys.stdout.flush()
 
 	with open(outSentencesFilename,'w') as f:
-		json.dump(outSentences,f)
+		json.dump(outSentences,f,indent=2)
 
 	print("%s : done" % now())
 	
