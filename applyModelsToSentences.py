@@ -112,6 +112,7 @@ def fusionGeneDetection(words, lookupDict):
 	
 		if allGenes:
 			#geneTxt = ",".join(map(str,geneIDs))
+			geneIDs = [ geneID.replace(';','&') for geneID in geneIDs ]
 			termtypesAndids.append([('gene','|'.join(geneIDs))])
 			terms.append(tuple(origWords[i:i+1]))
 			locs.append((i,i+1))
@@ -150,23 +151,26 @@ def processWords(words, lookup, detectFusionGenes=True, detectMicroRNA=True, det
 
 	if detectFusionGenes:
 		fusionLocs,fusionTerms,fusionTermtypesAndids = fusionGeneDetection(words,lookup)
-		
-		termtypesAndids += fusionTermtypesAndids
-		terms += fusionTerms
-		locs += fusionLocs
+	
+		for floc,fterm,ftermtypesAndid in zip(fusionLocs,fusionTerms,fusionTermtypesAndids):
+			if not floc in locs:
+				locs.append(floc)
+				terms.append(fterm)
+				termtypesAndids.append(ftermtypesAndid)
 
 	if detectMicroRNA:
 		for i,w in enumerate(words):
 			lw = w.lower()
 			if lw.startswith("mir-") or lw.startswith("hsa-mir-") or lw.startswith("microrna-") or (lw.startswith("mir") and len(lw) > 3 and lw[3] in string.digits):
-				termtypesAndids.append([('gene','mirna|'+w)])
-				terms.append((w,))
-				locs.append((i,i+1))
+				potentialLocs = (i,i+1)
+				if not potentialLocs in locs:
+					termtypesAndids.append([('gene','mirna|'+w)])
+					terms.append((w,))
+					locs.append((i,i+1))
 
 
 	filtered = zip(locs,terms,termtypesAndids)
 	filtered = sorted(filtered)
-
 
 	if mergeTerms:
 		# We'll attempt to merge terms (i.e. if a gene is referred to using two acronyms together)
@@ -409,10 +413,9 @@ def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,canc
 
 
 					if entity.externalID.startswith('combo'):
-						_,t1,t2 = entity.externalID.split('|')
-						st1 = getStandardizedTerm("",t1,IDToTerm)
-						st2 = getStandardizedTerm("",t2,IDToTerm)
-						standardizedTerm = "%s|%s" % (st1,st2)
+						externalIDsplit = entity.externalID.split('|')
+						standardizedTerms = [ getStandardizedTerm("",st.replace('&',';'),IDToTerm) for st in externalIDsplit[1:] ]
+						standardizedTerm = "|".join(standardizedTerms)
 					elif entity.externalID.startswith('mirna|'):
 						standardizedTerm = standardizeMIRName(entity.externalID)
 					else:
