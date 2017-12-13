@@ -280,8 +280,13 @@ def now():
 def getStandardizedTerm(text,externalID,IDToTerm):
 	standardizedTerms = [ IDToTerm[eid] for eid in externalID.split(';') ]
 	standardizedTerms = sorted(list(set(standardizedTerms)))
-	if text.lower() in standardizedTerms:
-		standardizedTerm = text.lower()
+
+	standardizedTermsLower = [ st.lower() for st in standardizedTerms ]
+	textLower = text.lower()
+
+	if textLower in standardizedTermsLower:
+		index = standardizedTermsLower.index(textLower)
+		standardizedTerm = standardizedTerms[index]
 	else:
 		standardizedTerm = ";".join(standardizedTerms)
 	return standardizedTerm
