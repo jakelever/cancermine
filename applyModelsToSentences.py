@@ -273,14 +273,14 @@ def loadWordlists(entityTypesWithFilenames):
 def now():
 	return time.strftime("%Y-%m-%d %H:%M:%S")
 
-def getDefiniteTerm(text,externalID,IDToTerm):
-	definiteTerms = [ IDToTerm[eid] for eid in externalID.split(';') ]
-	definiteTerms = sorted(list(set(definiteTerms)))
-	if text.lower() in definiteTerms:
-		definiteTerm = text.lower()
+def getStandardizedTerm(text,externalID,IDToTerm):
+	standardizedTerms = [ IDToTerm[eid] for eid in externalID.split(';') ]
+	standardizedTerms = sorted(list(set(standardizedTerms)))
+	if text.lower() in standardizedTerms:
+		standardizedTerm = text.lower()
 	else:
-		definiteTerm = ";".join(definiteTerms)
-	return definiteTerm
+		standardizedTerm = ";".join(standardizedTerms)
+	return standardizedTerm
 
 def standardizeMIRName(externalID):
 	assert externalID.startswith('mirna|'), "Unexpected ID: %s" % externalID
@@ -410,15 +410,15 @@ def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,canc
 
 					if entity.externalID.startswith('combo'):
 						_,t1,t2 = entity.externalID.split('|')
-						d1 = getDefiniteTerm("",t1,IDToTerm)
-						d2 = getDefiniteTerm("",t2,IDToTerm)
-						definiteTerm = "%s|%s" % (d1,d2)
+						st1 = getStandardizedTerm("",t1,IDToTerm)
+						st2 = getStandardizedTerm("",t2,IDToTerm)
+						standardizedTerm = "%s|%s" % (st1,st2)
 					elif entity.externalID.startswith('mirna|'):
-						definiteTerm = standardizeMIRName(entity.externalID)
+						standardizedTerm = standardizeMIRName(entity.externalID)
 					else:
-						definiteTerm = getDefiniteTerm(entity.text,entity.externalID,IDToTerm)
+						standardizedTerm = getStandardizedTerm(entity.text,entity.externalID,IDToTerm)
 
-					entityData.append(definiteTerm)
+					entityData.append(standardizedTerm)
 
 
 				if doc.metadata["pmid"]:
