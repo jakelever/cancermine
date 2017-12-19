@@ -1,4 +1,5 @@
 name: PUBMED_CANCERMINE_TEST
-url: http://bcgsc.ca/downloads/jlever/pmid.27955600.xml
+url: http://bcgsc.ca/downloads/jlever/pmid.26439428.xml
 type: dir
 format: pubmedxml
+generatePubmedHashes: True
