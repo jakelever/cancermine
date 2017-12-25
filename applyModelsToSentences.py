@@ -125,6 +125,8 @@ def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,canc
 				#words = [ t.word for t in sentence.tokens ]
 				#text = " ".join(words)
 
+				sentenceStart = sentence.tokens[0].startPos
+
 				relType = relation.relationType
 				entityData = []
 				for eID in relation.entityIDs:
@@ -143,12 +145,17 @@ def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,canc
 						standardizedTerm = getStandardizedTerm(entity.text,entity.externalID,IDToTerm)
 
 					entityData.append(standardizedTerm)
+					
+					assert len(entity.position) == 1, "Expecting entities that are contigious and have only one start and end position within the text"
+					startPos,endPos = entity.position[0]
+					entityData.append(startPos - sentenceStart)
+					entityData.append(endPos - sentenceStart)
 
 
 				if doc.metadata["pmid"]:
 					m = doc.metadata
 					outData = [m["pmid"],m['title'],m["journal"],m["year"],m['section'],relType] + entityData + [sentence.text]
-					outLine = "\t".join(outData)
+					outLine = "\t".join(map(str,outData))
 					outF.write(outLine+"\n")
 
 		timers['output'] += time.time() - startTime
