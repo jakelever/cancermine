@@ -1,0 +1,33 @@
+var trace1 = {
+  x: ['giraffes', 'orangutans', 'monkeys'],
+  y: [20, 14, 23],
+  name: 'SF Zoo',
+  type: 'bar'
+};
+
+var trace2 = {
+  x: ['giraffes', 'orangutans', 'monkeys'],
+  y: [12, 18, 29],
+  name: 'LA Zoo',
+  type: 'bar'
+};
+
+var cancermine = [
+{cancer: 'glioblastoma', gene: 'EGFR1', relationtype: 'Driver', count: 1, text: 'HelloA'},
+{cancer: 'glioblastoma', gene: 'EGFR1', relationtype: 'Oncogene', count: 1, text: 'HelloA'},
+{cancer: 'glioblastoma', gene: 'EGFR2', relationtype: 'Driver', count: 2, text: 'HelloB'},
+{cancer: 'glioblastoma', gene: 'EGFR2', relationtype: 'Tumor Suppressor', count: 2, text: 'HelloB'},
+{cancer: 'glioblastoma', gene: 'EGFR3', relationtype: 'Driver', count: 3, text: 'HelloC'},
+{cancer: 'glioblastoma', gene: 'EGFR3', relationtype: 'Oncogene', count: 3, text: 'HelloC'},
+{cancer: 'glioblastoma', gene: 'EGFR4', relationtype: 'Oncogene', count: 4, text: 'HelloD'},
+{cancer: 'glioblastoma', gene: 'EGFR4', relationtype: 'Tumor Suppressor', count: 4, text: 'HelloD'},
+{cancer: 'lung cancer', gene: 'EGFR1', relationtype: 'Driver', count: 5, text: 'HelloE'},
+{cancer: 'lung cancer', gene: 'EGFR1', relationtype: 'Oncogene', count: 5, text: 'HelloE'},
+{cancer: 'lung cancer', gene: 'EGFR2', relationtype: 'Driver', count: 6, text: 'HelloF'},
+{cancer: 'lung cancer', gene: 'EGFR2', relationtype: 'Tumor Suppressor', count: 6, text: 'HelloF'},
+{cancer: 'pancreatic cancer', gene: 'EGFR1', relationtype: 'Driver', count: 5, text: 'HelloX'},
+{cancer: 'prostate cancer', gene: 'EGFR1', relationtype: 'Tumor Suppressor', count: 1, text: 'HelloY'}
+];
+
+var cancers = [ 'glioblastoma', 'lung cancer' ];
+var genes = [ 'EGFR1', 'EGFR2', 'EGFR3', 'EGFR4' ];
