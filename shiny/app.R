@@ -6,7 +6,13 @@ library(dplyr)
 library(reshape2)
 library(RColorBrewer)
 
-cancermine <- read.table('cancermine_latest.tsv',header=T,sep='\t',quote='',comment.char='')
+cancermineFilename <- 'cancermine_latest.tsv'
+cancermineFilename <- normalizePath(cancermineFilename)
+fileInfo <- file.info(cancermineFilename)
+modifiedDate <- strsplit(as.character(fileInfo$mtime), ' ')[[1]][1]
+
+
+cancermine <- read.table(cancermineFilename,header=T,sep='\t',quote='',comment.char='')
 
 # Remove the entity location columns and unique the rows
 nonLocationColumns <- grep("(start|end)",colnames(cancermine),invert=T,value=T)
@@ -69,7 +75,8 @@ ui <- fluidPage(
                          DT::dataTableOutput("cancer_table")
                        )
               )
-  )
+  ),
+  helpText(paste("Last updated on",modifiedDate))
   
 )
 
@@ -86,11 +93,11 @@ users = reactiveValues(count = 0)
 server <- function(input, output, session) {
   onSessionStart = isolate({
     users$count = users$count + 1
-    cat(paste(Sys.time(),": Session started (", users$count , "users )"))
+    warning(paste(Sys.time(),": Session started (", users$count , "users )"))
   })
   onSessionEnded = isolate({
     users$count = users$count - 1
-    cat(paste(Sys.time(),": Session ended (", users$count , "users )"))
+    warning(paste(Sys.time(),": Session ended (", users$count , "users )"))
   })
   
   geneData <- reactive({
