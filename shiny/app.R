@@ -80,7 +80,19 @@ ui <- fluidPage(
 testData <- data.frame(labels=c('a','b','c'),values=c(2,5,3))
 plot_ly(testData, labels = ~labels, values = ~values, type = 'pie')
 
+users = reactiveValues(count = 0)
+
+
 server <- function(input, output, session) {
+  onSessionStart = isolate({
+    users$count = users$count + 1
+    cat(paste(Sys.time(),": Session started (", users$count , "users )"))
+  })
+  onSessionEnded = isolate({
+    users$count = users$count - 1
+    cat(paste(Sys.time(),": Session ended (", users$count , "users )"))
+  })
+  
   geneData <- reactive({
     table <- cancermineCounts[cancermineCounts$gene_standardized==input$gene_input,c('relationtype','gene_standardized','cancer_standardized','freq')]
     if (nrow(table)>0) {
