@@ -11,7 +11,6 @@ cancermineFilename <- normalizePath(cancermineFilename)
 fileInfo <- file.info(cancermineFilename)
 modifiedDate <- strsplit(as.character(fileInfo$mtime), ' ')[[1]][1]
 
-
 cancermine <- read.table(cancermineFilename,header=T,sep='\t',quote='',comment.char='')
 
 # Remove the entity location columns and unique the rows
@@ -93,11 +92,13 @@ users = reactiveValues(count = 0)
 server <- function(input, output, session) {
   onSessionStart = isolate({
     users$count = users$count + 1
-    warning(paste(Sys.time(),": Session started (", users$count , "users )"))
+    ipaddress <- session$request$REMOTE_ADDR
+    warning(paste(Sys.time(),": Session started from ",ipaddress," (", users$count , "users )"))
   })
   onSessionEnded = isolate({
     users$count = users$count - 1
-    warning(paste(Sys.time(),": Session ended (", users$count , "users )"))
+    ipaddress <- session$request$REMOTE_ADDR
+    warning(paste(Sys.time(),": Session ended from ",ipaddress," (", users$count , "users )"))
   })
   
   geneData <- reactive({
