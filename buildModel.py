@@ -26,7 +26,7 @@ if __name__ == '__main__':
 		print("  Doing training")
 		features = "entityTypes,unigramsBetweenEntities,bigrams,dependencyPathEdges,dependencyPathEdgesNearEntities".split(',')
 		threshold = thresholds[relationType]
-		classifier = kindred.RelationClassifier(classifierType='LogisticRegression',threshold=threshold,features=features,acceptedEntityPairs=[('cancer','gene')])
+		classifier = kindred.RelationClassifier(classifierType='LogisticRegression',threshold=threshold,features=features,acceptedEntityTypes=[('cancer','gene')])
 		classifier.train(trainCorpus)
 
 		print("  Saving classifer")
