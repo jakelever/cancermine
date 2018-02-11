@@ -1,1 +1,1 @@
-pmid	title	journal	year	section	relationtype	cancer_id	cancer_name	cancer_standardized	cancer_start	cancer_end	gene_id	gene_name	gene_standardized	gene_start	gene_end	sentence
+pmid	title	journal	year	section	relationtype	cancer_id	cancer_name	cancer_normalized	cancer_start	cancer_end	gene_id	gene_name	gene_normalized	gene_start	gene_end	sentence
