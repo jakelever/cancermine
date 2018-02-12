@@ -1,0 +1,80 @@
+<h3>Usage</h3>
+
+Some basic tips on how to use CancerMine
+
+<ul>
+	<li>You can search by gene or cancer type using the tabs at the top and the dropdown box on the left. Type in part of the gene or cancer type and it will give auto-completion suggestions.</li>
+	<li>You can then click on a row in the table or segment in the bar-chart to bring up the associated sentences in the papers on the left (with links to the PubMed citation).</li>
+	<li>The gene names are from <a href="https://www.genenames.org/">HUGO</a> and the cancer types are from the <a href="http://www.disease-ontology.org/">Disease Ontology</a></li>
+	<li>The system tries to normalize gene/cancer names to those ontologies (e.g. HER2 -> ERBB2 and ESCC -> esophagus squamous cell carcinoma).</li>
+	<li>Sometimes it can't find one specific case so it lists all the possibilities separated by a semi-colon. So p75 gets mapped to "CUX1;HCLS1;PSIP1;SIGLEC7;TNFRSF1B" as it is very ambiguous.</li>
+	<li>It also tries to detect possible fusions or combinations. These are separated by the pipe '|'. So you may see 'BCR|ABL1'</li>
+	<li>The system tries to understand the meaning of the sentence. We've dialed up the precision so it should make as few false positives as possible, but there will be a few mistakes.</li>
+	<li>It will be updated once a month (roughly on the 1st) with the latest publications</li>
+	<li>If you want this data in TSV form, it can be accessed at: http://bcgsc.ca/downloads/jlever/cancermine/ It's a TSV file with headers.</li>
+</ul>
+
+<h3>FAQs</h3>
+
+<p>
+	<b>Q: Why the focus on drivers, oncogenes and tumor suppressors?</b>
+</p>
+<p>
+	A: When interpreting precision medicine data for an individual patient, it is incredibly important to understand the role of different genes in which somatic mutations occur.
+</p>
+
+<p>
+	<b>Q: When I type in a gene or cancer, it isn't autocompleted. Why is that?</b>
+</p>
+<p>
+	A: If a gene or cancer doesn't come up, it means that it isn't in CancerMine. Check that the gene/cancer name is the standard name (e.g. ERBB2 not HER2) in the associated ontology (<a href="https://www.genenames.org/">HUGO</a> and the <a href="http://www.disease-ontology.org/">Disease Ontology</a>).
+</p>
+
+<p>
+	<b>Q: What text is being mined?</b>
+</p>
+<p>
+	A: We are processing the entirety of Pubmed (~22 million abstracts) and Pubmed Central Open Access Subset (~1 million full text articles).
+</p>
+
+<p>
+	<b>Q: Are you just using co-occurrences?</b>
+</p>
+<p>
+	A: No. Co-occurrences count how many times a gene and a cancer-type appear in the same sentence. We use the <a href="https://github.com/jakelever/kindred">Kindred relation extraction package</a> to understand the context of the sentence and only extract sentences that discuss a driver, oncogene or tumor suppressor with high likelihood.
+</p>
+
+<p>
+	<b>Q: How regularly is this updated?</b>
+</p>
+<p>
+	A: CancerMine is updated monthly (around the 1st of the month) and makes use of the <a href="https://github.com/jakelever/pubrunner">PubRunner package</a> to make it easier and minimise the amount of additional computation on new abstracts and papers in Pubmed and Pubmed Central Open Access subset.
+</p>
+
+<p>
+	<b>Q: I found a sentence that doesn't say what CancerMine describes. Why?</b>
+</p>
+<p>
+	A: CancerMine is completely automated with no human curation so there will be some mistakes. We've adjusted the precision to make as few false positive mistakes (with a tradeoff of likely higher false negatives). All information offered by CancerMine should be interpreted accordingly.
+</p>
+
+<p>
+	<b>Q: Could this approach be used to extract other types of biomedical knowledge?</b>
+</p>
+<p>
+	A: It probably could. If you'd like to talk, please get in contact with <a href="mailto:jlever@bcgsc.ca">Jake Lever</a>.
+</p>
+
+<p>
+	<b>Q: Where can I get the raw data to use?</b>
+</p>
+<p>
+	A: The data can be downloaded <a href="../data">here</a>. It is in TSV format with headers. It is licensed under <a href="https://creativecommons.org/share-your-work/public-domain/cc0/">CC0</a>. Once the paper is finalised, we'd appreciate if you would cite it if you use this data.
+</p>
+
+<p>
+	<b>Q: How can I cite this work?</b>
+</p>
+<p>
+	A: There is currently a paper in preparation.
+</p>
