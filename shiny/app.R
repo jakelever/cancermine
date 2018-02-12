@@ -46,7 +46,9 @@ color_Driver <- colors[1]
 color_TumorSuppressor <- colors[2]
 color_Oncogene <- colors[3]
 
-ui <- fluidPage(
+ui <- function(req) {
+  fluidPage(
+  tags$head(tags$script(src="../js/google-analytics.js")),
   headerPanel("CancerMine"),
   helpText("Text mined database of drivers, oncogenes and tumor suppressors in cancer"),
   tabsetPanel(type = "tabs",
@@ -78,29 +80,9 @@ ui <- fluidPage(
   helpText(paste("Last updated on",modifiedDate))
   
 )
-
-#USPersonalExpenditure <- data.frame("Categorie"=rownames(USPersonalExpenditure), USPersonalExpenditure)
-#data <- USPersonalExpenditure[,c('Categorie', 'X1960')]
-
-
-testData <- data.frame(labels=c('a','b','c'),values=c(2,5,3))
-plot_ly(testData, labels = ~labels, values = ~values, type = 'pie')
-
-users = reactiveValues(count = 0)
-
+}
 
 server <- function(input, output, session) {
-  onSessionStart = isolate({
-    users$count = users$count + 1
-    ipaddress <- session$request$REMOTE_ADDR
-    warning(paste(Sys.time(),": Session started from ",ipaddress," (", users$count , "users )"))
-  })
-  onSessionEnded = isolate({
-    users$count = users$count - 1
-    ipaddress <- session$request$REMOTE_ADDR
-    warning(paste(Sys.time(),": Session ended from ",ipaddress," (", users$count , "users )"))
-  })
-  
   geneData <- reactive({
     table <- cancermineCounts[cancermineCounts$gene_standardized==input$gene_input,c('relationtype','gene_standardized','cancer_standardized','freq')]
     if (nrow(table)>0) {
