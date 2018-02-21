@@ -5,9 +5,18 @@ library(plyr)
 library(dplyr)
 library(reshape2)
 library(RColorBrewer)
+library(data.table)
 
+# Weird hack as R sometimes "forgets" its working directory
 wd <- setwd(".")
 setwd(wd)
+
+# Make an empty Google analytics file (for dev version - not for production)
+if (!file.exists('google-analytics.js'))
+{
+  file.create('google-analytics.js')
+}
+
 
 cancermineFilename <- 'cancermine_latest.tsv'
 cancermineFilename <- normalizePath(cancermineFilename)
@@ -15,10 +24,11 @@ fileInfo <- file.info(cancermineFilename)
 modifiedDate <- strsplit(as.character(fileInfo$mtime), ' ')[[1]][1]
 
 cancermine <- read.table(cancermineFilename,header=T,sep='\t',quote='',comment.char='')
+cancermine <- as.data.table(cancermine)
 
 # Remove the entity location columns and unique the rows
-nonLocationColumns <- grep("(start|end)",colnames(cancermine),invert=T,value=T)
-cancermine <- cancermine[,nonLocationColumns]
+nonLocationColumns <- grep("(start|end)",colnames(cancermine),invert=T)
+cancermine <- cancermine[,nonLocationColumns,with=FALSE]
 cancermine <- cancermine[!duplicated(cancermine),]
 
 # Do some ordering
@@ -27,17 +37,12 @@ cancermine <- cancermine[order(cancermine$cancer_normalized),]
 cancermine <- cancermine[order(cancermine$gene_normalized),]
 
 cancermineCounts <- plyr::count(cancermine[,c('relationtype','gene_normalized','cancer_normalized')])
+cancermineCounts <- as.data.table(cancermineCounts)
 cancermineCounts <- cancermineCounts[order(cancermineCounts$relationtype),]
 cancermineCounts <- cancermineCounts[order(cancermineCounts$cancer_normalized),]
 cancermineCounts <- cancermineCounts[order(cancermineCounts$gene_normalized),]
 
 cancermine$preparedText <- paste(cancermine$sentence, " <a href='https://www.ncbi.nlm.nih.gov/pubmed/", cancermine$pmid, "'>PMID:", cancermine$pmid, "</a>", sep='')
-
-# Make an empty Google analytics file (for dev version - not for production)
-if (!file.exists('google-analytics.js'))
-{
-  file.create('google-analytics.js')
-}
 
 genecounts <- plyr::count(cancermine$gene_normalized)
 genecounts <- genecounts[order(genecounts$freq),]
