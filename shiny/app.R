@@ -66,7 +66,7 @@ ui <- function(req) {
   tabsetPanel(type = "tabs",
               tabPanel("By Gene", 
                        sidebarPanel(
-                         selectizeInput("gene_input", "Gene", geneNames, selected = 'EGFR', multiple = FALSE, options = NULL),
+                         selectizeInput("gene_input", "Gene", geneNames, selected = 'EGFR', multiple = FALSE, options = list(maxOptions = 2*length(geneNames))),
                          plotlyOutput("gene_piechart"),
                          htmlOutput("gene_text")
                          #verbatimTextOutput("gene_text")
@@ -79,7 +79,7 @@ ui <- function(req) {
               ),
               tabPanel("By Cancer", 
                        sidebarPanel(
-                         selectizeInput("cancer_input", "Cancer", cancerNames, selected = 'colorectal cancer', multiple = FALSE, options = NULL),
+                         selectizeInput("cancer_input", "Cancer", cancerNames, selected = 'colorectal cancer', multiple = FALSE, options = list(maxOptions = 2*length(cancerNames))),
                          plotlyOutput("cancer_piechart"),
                          htmlOutput("cancer_text")
                          #verbatimTextOutput("cancer_text")
