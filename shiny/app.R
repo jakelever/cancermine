@@ -29,7 +29,7 @@ cancermine <- as.data.table(cancermine)
 
 # Remove citation with missing PMID (for whatever reason)
 cancermine <- cancermine[cancermine$pmid!='None',]
-cancermine$pmid <- as.integer(cancermine$pmid)
+cancermine$pmid <- as.integer(as.character(cancermine$pmid))
 
 # Remove the entity location columns and unique the rows
 nonLocationColumns <- grep("(start|end)",colnames(cancermine),invert=T)
@@ -41,6 +41,8 @@ cancermine$pmidLink <- paste("<a target=\"_blank\" href='https://www.ncbi.nlm.ni
 cancermine$journalShort <- strtrim(cancermine$journal,51)
 cancermine[str_length(cancermine$journalShort)==51,'journalShort'] <- paste(strtrim(cancermine[str_length(cancermine$journalShort)==51,]$journalShort,50),'...',sep='')
 cancermine$journalShort <- factor(cancermine$journalShort)
+cancermine[cancermine$section=='back','section'] <- 'article'
+cancermine[cancermine$section=='floating','section'] <- 'article'
 
 
 # Do some ordering
@@ -49,7 +51,10 @@ cancermine <- cancermine[order(cancermine$cancer_normalized),]
 cancermine <- cancermine[order(cancermine$gene_normalized),]
 cancermine <- cancermine[order(cancermine$year,decreasing=T),]
 
-cancermineCounts <- plyr::count(cancermine[,c('relationtype','gene_normalized','cancer_normalized')])
+cancermineUniquePMIDs <- cancermine[,c('pmid','relationtype','gene_normalized','cancer_normalized')]
+cancermineUniquePMIDs <- cancermineUniquePMIDs[!duplicated(cancermineUniquePMIDs),]
+
+cancermineCounts <- plyr::count(cancermineUniquePMIDs[,c('relationtype','gene_normalized','cancer_normalized')])
 cancermineCounts <- as.data.table(cancermineCounts)
 cancermineCounts <- cancermineCounts[order(cancermineCounts$relationtype),]
 cancermineCounts <- cancermineCounts[order(cancermineCounts$cancer_normalized),]
@@ -133,7 +138,7 @@ server <- function(input, output, session) {
     DT::datatable(geneData(),
                   selection = 'single',
                   rownames = FALSE,
-                  colnames=c('Role','Gene', 'Cancer', 'Sentence count'),
+                  colnames=c('Role','Gene', 'Cancer', 'Citation #'),
                   options = list(lengthMenu = c(5, 30, 50), pageLength = 20))
   })
   
@@ -243,7 +248,7 @@ server <- function(input, output, session) {
     DT::datatable(cancerData(),
                   selection = 'single',
                   rownames = FALSE,
-                  colnames=c('Role','Gene', 'Cancer', 'Sentence count'),
+                  colnames=c('Role','Gene', 'Cancer', 'Citation #'),
                   options = list(lengthMenu = c(5, 30, 50), pageLength = 20))
   })
   
