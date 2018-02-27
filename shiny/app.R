@@ -95,7 +95,8 @@ ui <- function(req) {
                          DT::dataTableOutput("gene_table"),
                          HTML(citationTableExplanation),
                          DT::dataTableOutput("gene_citations"),
-                         helpText(paste("Last updated on",modifiedDate))
+                         helpText(paste("Last updated on",modifiedDate)),
+                         helpText(includeHTML("cc0.html"))
                          )
               ),
               tabPanel("By Cancer", 
@@ -109,13 +110,13 @@ ui <- function(req) {
                          DT::dataTableOutput("cancer_table"),
                          HTML(citationTableExplanation),
                          DT::dataTableOutput("cancer_citations"),
-                         helpText(paste("Last updated on",modifiedDate))
+                         helpText(paste("Last updated on",modifiedDate)),
+                         helpText(includeHTML("cc0.html"))
                        )
               ),
               tabPanel("Help", helpText(includeHTML("help.html"))),
               tabPanel("About", helpText(includeHTML("about.html")))
-  ),
-  helpText(includeHTML("cc0.html"))
+  )
   
 )
 }
