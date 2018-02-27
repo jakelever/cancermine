@@ -6,6 +6,7 @@ library(dplyr)
 library(reshape2)
 library(RColorBrewer)
 library(data.table)
+library(stringr)
 
 # Weird hack as R sometimes "forgets" its working directory
 wd <- setwd(".")
@@ -26,15 +27,27 @@ modifiedDate <- strsplit(as.character(fileInfo$mtime), ' ')[[1]][1]
 cancermine <- read.table(cancermineFilename,header=T,sep='\t',quote='',comment.char='')
 cancermine <- as.data.table(cancermine)
 
+# Remove citation with missing PMID (for whatever reason)
+cancermine <- cancermine[cancermine$pmid!='None',]
+cancermine$pmid <- as.integer(cancermine$pmid)
+
 # Remove the entity location columns and unique the rows
 nonLocationColumns <- grep("(start|end)",colnames(cancermine),invert=T)
 cancermine <- cancermine[,nonLocationColumns,with=FALSE]
 cancermine <- cancermine[!duplicated(cancermine),]
 
+# Fill in some details for the citation table
+cancermine$pmidLink <- paste("<a target=\"_blank\" href='https://www.ncbi.nlm.nih.gov/pubmed/", cancermine$pmid, "'>", cancermine$pmid, "</a>", sep='')
+cancermine$journalShort <- strtrim(cancermine$journal,51)
+cancermine[str_length(cancermine$journalShort)==51,'journalShort'] <- paste(strtrim(cancermine[str_length(cancermine$journalShort)==51,]$journalShort,50),'...',sep='')
+cancermine$journalShort <- factor(cancermine$journalShort)
+
+
 # Do some ordering
 cancermine <- cancermine[order(cancermine$relationtype),]
 cancermine <- cancermine[order(cancermine$cancer_normalized),]
 cancermine <- cancermine[order(cancermine$gene_normalized),]
+cancermine <- cancermine[order(cancermine$year,decreasing=T),]
 
 cancermineCounts <- plyr::count(cancermine[,c('relationtype','gene_normalized','cancer_normalized')])
 cancermineCounts <- as.data.table(cancermineCounts)
@@ -58,6 +71,8 @@ color_Driver <- colors[1]
 color_TumorSuppressor <- colors[2]
 color_Oncogene <- colors[3]
 
+citationTableExplanation <- "<br /><br /><br /><b>Citation Table:</b><br />Select row in table above to see associated citations and sentences<br /><br />"
+
 ui <- function(req) {
   fluidPage(
   tags$head(includeHTML("google-analytics.js")),
@@ -67,26 +82,26 @@ ui <- function(req) {
               tabPanel("By Gene", 
                        sidebarPanel(
                          selectizeInput("gene_input", "Gene", geneNames, selected = 'EGFR', multiple = FALSE, options = list(maxOptions = 2*length(geneNames))),
-                         plotlyOutput("gene_overview"),
-                         htmlOutput("gene_text")
-                         #verbatimTextOutput("gene_text")
+                         plotlyOutput("gene_overview")
                          ),
                        mainPanel(
                          plotlyOutput("gene_barchart"),
                          DT::dataTableOutput("gene_table"),
+                         HTML(citationTableExplanation),
+                         DT::dataTableOutput("gene_citations"),
                          helpText(paste("Last updated on",modifiedDate))
                          )
               ),
               tabPanel("By Cancer", 
                        sidebarPanel(
                          selectizeInput("cancer_input", "Cancer", cancerNames, selected = 'colorectal cancer', multiple = FALSE, options = list(maxOptions = 2*length(cancerNames))),
-                         plotlyOutput("cancer_overview"),
-                         htmlOutput("cancer_text")
-                         #verbatimTextOutput("cancer_text")
+                         plotlyOutput("cancer_overview")
                        ),
                        mainPanel(
                          plotlyOutput("cancer_barchart"),
                          DT::dataTableOutput("cancer_table"),
+                         HTML(citationTableExplanation),
+                         DT::dataTableOutput("cancer_citations"),
                          helpText(paste("Last updated on",modifiedDate))
                        )
               ),
@@ -176,6 +191,7 @@ server <- function(input, output, session) {
     p$elementId <- NULL
     p
   })
+  
   observe({
     s <- event_data("plotly_click", source = "gene_barchart")
     if (length(s) > 0) {
@@ -186,20 +202,22 @@ server <- function(input, output, session) {
     }
   })
   
-  
-  output$gene_text <- renderPrint({
-    if(length(input$gene_table_rows_selected)==0) {
-      cat("Select a row from the table to see the associated sentences and citations")
-    } else {
+  output$gene_citations <- DT::renderDataTable({
+    if(length(input$gene_table_rows_selected)>0) {
       table <- geneData()
       row <- table[input$gene_table_rows_selected,]
       entries <- cancermine[cancermine$relationtype==row$relationtype & cancermine$cancer_normalized==row$cancer_normalized & cancermine$gene_normalized==row$gene_normalized,]
-      
-      cat(entries$preparedText,sep='<br /><br />')
+    } else {
+      entries <- data.frame(matrix(nrow=0,ncol=5))
+      colnames(entries) <- c('pmidLink','journalShort','year','section','sentence')
     }
+    DT::datatable(entries[,c('pmidLink','journalShort','year','section','sentence'),],
+                  selection = 'none',
+                  rownames = FALSE,
+                  colnames=c('PMID','Journal','Year', 'Section', 'Sentence'),
+                  escape = FALSE,
+                  options = list(pageLength = 20))
   })
-  
-  
   
   
   
@@ -307,6 +325,23 @@ server <- function(input, output, session) {
     }
   })
   
+  
+  output$cancer_citations <- DT::renderDataTable({
+    if(length(input$cancer_table_rows_selected)>0) {
+      table <- cancerData()
+      row <- table[input$cancer_table_rows_selected,]
+      entries <- cancermine[cancermine$relationtype==row$relationtype & cancermine$cancer_normalized==row$cancer_normalized & cancermine$gene_normalized==row$gene_normalized,]
+    } else {
+      entries <- data.frame(matrix(nrow=0,ncol=5))
+      colnames(entries) <- c('pmidLink','journalShort','year','section','sentence')
+    }
+    DT::datatable(entries[,c('pmidLink','journalShort','year','section','sentence'),],
+                  selection = 'none',
+                  rownames = FALSE,
+                  colnames=c('PMID','Journal','Year', 'Section', 'Sentence'),
+                  escape = FALSE,
+                  options = list(pageLength = 20))
+  })
   
   
   
