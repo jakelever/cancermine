@@ -163,8 +163,6 @@ server <- function(input, output, session) {
       completecounts[completecounts$relationtype=='Oncogene','color'] <- color_Oncogene
       completecounts[completecounts$relationtype=='Tumor_Suppressor','color'] <- color_TumorSuppressor
       
-      completecounts <- completecounts[completecounts$freq>0,]
-      
       p <- plot_ly(completecounts, x=~relationtype, y=~freq, source='gene_barchart', type = 'bar', marker=list(color=completecounts$color)) %>%
         layout(yaxis = list(title = 'Total Citation Count'), margin = list(b = 200), xaxis=list(title = "", tickangle = 90))%>% 
         config(displayModeBar = F)
@@ -272,8 +270,6 @@ server <- function(input, output, session) {
       completecounts[completecounts$relationtype=='Driver','color'] <- color_Driver
       completecounts[completecounts$relationtype=='Oncogene','color'] <- color_Oncogene
       completecounts[completecounts$relationtype=='Tumor_Suppressor','color'] <- color_TumorSuppressor
-      
-      completecounts <- completecounts[completecounts$freq>0,]
       
       p <- plot_ly(completecounts, x=~relationtype, y=~freq, source='gene_barchart', type = 'bar', marker=list(color=completecounts$color)) %>%
         layout(yaxis = list(title = 'Total Citation Count'), margin = list(b = 200), xaxis=list(title = "", tickangle = 90))%>% 
