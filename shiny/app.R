@@ -67,7 +67,7 @@ ui <- function(req) {
               tabPanel("By Gene", 
                        sidebarPanel(
                          selectizeInput("gene_input", "Gene", geneNames, selected = 'EGFR', multiple = FALSE, options = list(maxOptions = 2*length(geneNames))),
-                         plotlyOutput("gene_piechart"),
+                         plotlyOutput("gene_overview"),
                          htmlOutput("gene_text")
                          #verbatimTextOutput("gene_text")
                          ),
@@ -80,7 +80,7 @@ ui <- function(req) {
               tabPanel("By Cancer", 
                        sidebarPanel(
                          selectizeInput("cancer_input", "Cancer", cancerNames, selected = 'colorectal cancer', multiple = FALSE, options = list(maxOptions = 2*length(cancerNames))),
-                         plotlyOutput("cancer_piechart"),
+                         plotlyOutput("cancer_overview"),
                          htmlOutput("cancer_text")
                          #verbatimTextOutput("cancer_text")
                        ),
@@ -125,7 +125,7 @@ server <- function(input, output, session) {
   geneTableProxy = dataTableProxy('gene_table')
   
   
-  output$gene_piechart <- renderPlotly({
+  output$gene_overview <- renderPlotly({
     table <- geneData()
     if (nrow(table) > 0) {
       relationcounts <- aggregate(table$freq,by=list(table$relationtype),FUN=sum)
@@ -142,18 +142,16 @@ server <- function(input, output, session) {
       
       completecounts <- completecounts[completecounts$freq>0,]
       
-      p <- plot_ly(completecounts, labels = ~relationtype, values = ~freq, type = 'pie', marker=list(colors=completecounts$color)) %>%
-        layout(title = paste('Roles for',input$gene_input),
-               xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-               yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))%>% 
+      p <- plot_ly(completecounts, x=~relationtype, y=~freq, source='gene_barchart', type = 'bar', marker=list(color=completecounts$color)) %>%
+        layout(yaxis = list(title = 'Total Citation Count'), margin = list(b = 200), xaxis=list(title = "", tickangle = 90))%>% 
         config(displayModeBar = F)
-      p$elementId <- NULL
-      p
+      
     } else {
-      plotly_empty()%>% 
+      p <- plotly_empty(type='pie')%>% 
         config(displayModeBar = F)
     }
-    
+    p$elementId <- NULL
+    p
   })
   
   output$gene_barchart <- renderPlotly({
@@ -170,13 +168,13 @@ server <- function(input, output, session) {
         add_trace(y = ~Driver, name = 'Driver', marker=list(color=color_Driver))%>%
         layout(yaxis = list(title = 'Count'), barmode = 'stack', margin = list(b = 200), xaxis=list(title = "", tickangle = 45))%>% 
         config(displayModeBar = F)
-      p$elementId <- NULL
-      p
+      
     } else {
-      plotly_empty()%>% 
+      p <- plotly_empty(type='pie')%>% 
         config(displayModeBar = F)
     }
-    
+    p$elementId <- NULL
+    p
   })
   observe({
     s <- event_data("plotly_click", source = "gene_barchart")
@@ -234,7 +232,7 @@ server <- function(input, output, session) {
   cancerTableProxy = dataTableProxy('cancer_table')
   
   
-  output$cancer_piechart <- renderPlotly({
+  output$cancer_overview <- renderPlotly({
     table <- cancerData()
     if (nrow(table) > 0) {
       relationcounts <- aggregate(table$freq,by=list(table$relationtype),FUN=sum)
@@ -251,18 +249,16 @@ server <- function(input, output, session) {
       
       completecounts <- completecounts[completecounts$freq>0,]
       
-      p <- plot_ly(completecounts, labels = ~relationtype, values = ~freq, type = 'pie', marker=list(colors=completecounts$color)) %>%
-        layout(title = paste('Gene roles for',input$cancer_input),
-               xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-               yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))%>% 
+      p <- plot_ly(completecounts, x=~relationtype, y=~freq, source='gene_barchart', type = 'bar', marker=list(color=completecounts$color)) %>%
+        layout(yaxis = list(title = 'Total Citation Count'), margin = list(b = 200), xaxis=list(title = "", tickangle = 90))%>% 
         config(displayModeBar = F)
-      p$elementId <- NULL
-      p
+      
     } else {
-      plotly_empty()%>% 
+      p <- plotly_empty(type='pie')%>% 
         config(displayModeBar = F)
     }
-    
+    p$elementId <- NULL
+    p
   })
   
   output$cancer_barchart <- renderPlotly({
@@ -279,12 +275,12 @@ server <- function(input, output, session) {
         add_trace(y = ~Driver, name = 'Driver', marker=list(color=color_Driver))%>%
         layout(yaxis = list(title = 'Count'), barmode = 'stack', margin = list(b = 200), xaxis=list(title = "", tickangle = 45))%>% 
         config(displayModeBar = F)
-      p$elementId <- NULL
-      p
     } else {
-      plotly_empty()%>% 
+      p <- plotly_empty(type='pie')%>% 
         config(displayModeBar = F)
     }
+    p$elementId <- NULL
+    p
     
   })
   
