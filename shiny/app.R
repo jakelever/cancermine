@@ -87,7 +87,8 @@ ui <- function(req) {
               tabPanel("By Gene", 
                        sidebarPanel(
                          selectizeInput("gene_input", "Gene", geneNames, selected = 'EGFR', multiple = FALSE, options = list(maxOptions = 2*length(geneNames))),
-                         plotlyOutput("gene_overview")
+                         plotlyOutput("gene_overview"),
+                         width=3
                          ),
                        mainPanel(
                          plotlyOutput("gene_barchart"),
@@ -100,7 +101,8 @@ ui <- function(req) {
               tabPanel("By Cancer", 
                        sidebarPanel(
                          selectizeInput("cancer_input", "Cancer", cancerNames, selected = 'colorectal cancer', multiple = FALSE, options = list(maxOptions = 2*length(cancerNames))),
-                         plotlyOutput("cancer_overview")
+                         plotlyOutput("cancer_overview"),
+                         width=3
                        ),
                        mainPanel(
                          plotlyOutput("cancer_barchart"),
