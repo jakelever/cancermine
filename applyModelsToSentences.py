@@ -39,6 +39,20 @@ def normalizeMIRName(externalID):
 
 	return normalizedName
 
+def applyFinalFilter(row):
+	# Filter out incorrect output with some rules
+
+	headers = ['pmid', 'title', 'journal', 'year', 'section', 'relationtype', 'cancer_id', 'cancer_name', 'cancer_normalized', 'cancer_start', 'cancer_end', 'gene_id', 'gene_name', 'gene_normalized', 'gene_start', 'gene_end', 'sentence']
+	assert len(row) == len(headers), "Number of columns in output data (%d) doesn't  match with header count (%d)" % (len(row),len(headers))
+
+	row = { h:v for h,v in zip(headers,row) }
+
+	# Check for the number of semicolons (suggesting a list)
+	if row['sentence'].count(';') > 5:
+		return False
+
+	return True
+
 def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,cancerTypes,outData):
 	print("%s : start" % now())
 
@@ -154,9 +168,10 @@ def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,canc
 
 				if doc.metadata["pmid"]:
 					m = doc.metadata
-					outData = [m["pmid"],m['title'],m["journal"],m["year"],m['section'],relType] + entityData + [sentence.text]
-					outLine = "\t".join(map(str,outData))
-					outF.write(outLine+"\n")
+					outData = [m['pmid'],m['title'],m["journal"],m["year"],m['section'],relType] + entityData + [sentence.text]
+					if applyFinalFilter(outData):
+						outLine = "\t".join(map(str,outData))
+						outF.write(outLine+"\n")
 
 		timers['output'] += time.time() - startTime
 
