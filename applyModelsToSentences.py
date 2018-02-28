@@ -104,7 +104,7 @@ def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,canc
 	print("%s : parsed" % now())
 
 	startTime = time.time()
-	ner = kindred.EntityRecognizer(lookup=termLookup,detectFusionGenes=True,detectMicroRNA=True,acronymDetectionForAmbiguity=True,mergeTerms=True)
+	ner = kindred.EntityRecognizer(lookup=termLookup,detectFusionGenes=True,detectMicroRNA=True,acronymDetectionForAmbiguity=True,mergeTerms=True,removePathways=True)
 	ner.annotate(corpus)
 	timers['ner'] += time.time() - startTime
 	print("%s : ner" % now())
