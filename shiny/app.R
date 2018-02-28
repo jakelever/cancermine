@@ -24,7 +24,7 @@ cancermineFilename <- normalizePath(cancermineFilename)
 fileInfo <- file.info(cancermineFilename)
 modifiedDate <- strsplit(as.character(fileInfo$mtime), ' ')[[1]][1]
 
-cancermine <- read.table(cancermineFilename,header=T,sep='\t',quote='',comment.char='')
+cancermine <- read.table(cancermineFilename,header=T,sep='\t',quote='',comment.char='',encoding="UTF-8")
 cancermine <- as.data.table(cancermine)
 
 # Remove citation with missing PMID (for whatever reason)
@@ -60,6 +60,8 @@ cancermineCounts <- cancermineCounts[order(cancermineCounts$relationtype),]
 cancermineCounts <- cancermineCounts[order(cancermineCounts$cancer_normalized),]
 cancermineCounts <- cancermineCounts[order(cancermineCounts$gene_normalized),]
 
+#cancermineCounts <- cancermineCounts[cancermineCounts$freq > 1,]
+
 cancermine$preparedText <- paste(cancermine$sentence, " <a href='https://www.ncbi.nlm.nih.gov/pubmed/", cancermine$pmid, "'>PMID:", cancermine$pmid, "</a>", sep='')
 
 genecounts <- plyr::count(cancermine$gene_normalized)
@@ -68,8 +70,8 @@ genecounts <- genecounts[order(genecounts$freq),]
 cancercounts <- plyr::count(cancermine$cancer_normalized)
 cancercounts <- cancercounts[order(cancercounts$freq),]
 
-geneNames <- sort(unique(as.character(cancermine$gene_normalized)))
-cancerNames <- sort(unique(as.character(cancermine$cancer_normalized)))
+geneNames <- sort(unique(as.character(cancermineCounts$gene_normalized)))
+cancerNames <- sort(unique(as.character(cancermineCounts$cancer_normalized)))
 
 colors <- brewer.pal(3,'Set2')
 color_Driver <- colors[1]
