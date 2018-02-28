@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
 	args = parser.parse_args()
 
-	thresholds = {'Driver':0.89, 'Oncogene': 0.94, 'Tumor_Suppressor': 0.97}
+	thresholds = {'Driver':0.80, 'Oncogene': 0.76, 'Tumor_Suppressor': 0.92}
 
 	for relationType,outModel in zip(['Driver','Oncogene','Tumor_Suppressor'], [args.outModel_Driver,args.outModel_Oncogene,args.outModel_TumorSuppressor] ):
 		print("Building %s model" % relationType)
