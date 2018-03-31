@@ -9,10 +9,12 @@ resources:
       - PMCOA:
          format: bioc
    test:
-      - PUBMED_CANCERMINE_TEST:
+      - PUBMED_CUSTOM:
+         pmids: 24427302
          format: bioc
          rename: PUBMED
-      - PMCOA_CANCERMINE_TEST:
+      - PMCOA_CUSTOM:
+         pmcids: 3960274
          format: bioc
          rename: PMCOA
 run:
