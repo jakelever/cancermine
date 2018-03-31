@@ -1,5 +1,0 @@
-name: PUBMED_CANCERMINE_TEST
-url: http://bcgsc.ca/downloads/jlever/pmid.26439428.xml
-type: remote
-format: pubmedxml
-generatePubmedHashes: True
