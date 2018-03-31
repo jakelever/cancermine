@@ -13,6 +13,14 @@ import json
 def now():
 	return time.strftime("%Y-%m-%d %H:%M:%S")
 
+def filterCorpus(corpus,filterTerms):
+	filtered = kindred.Corpus()
+	for doc in corpus.documents:
+		termsFound = any( ft in doc.text.lower() for ft in filterTerms )
+		if termsFound:
+			filtered.addDocument(doc)
+	return filtered
+
 def parseAndFindEntities(biocFile,filterTermsFile,wordlistPickle,outSentencesFilename):
 	print("%s : start" % now())
 
@@ -33,6 +41,10 @@ def parseAndFindEntities(biocFile,filterTermsFile,wordlistPickle,outSentencesFil
 	parser = kindred.Parser()
 	ner = kindred.EntityRecognizer(lookup=termLookup,detectFusionGenes=True,detectMicroRNA=True,acronymDetectionForAmbiguity=True,mergeTerms=True)
 	for corpusno,corpus in enumerate(kindred.iterLoadDataFromBioc(biocFile)):
+		startTime = time.time()
+		corpus = filterCorpus(corpus,filterTerms)
+		timers['filter'] += time.time() - startTime
+
 		startTime = time.time()
 		parser.parse(corpus)
 		timers['parser'] += time.time() - startTime
