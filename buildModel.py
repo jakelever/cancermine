@@ -9,10 +9,14 @@ if __name__ == '__main__':
 	parser.add_argument('--outModel_Driver',type=str,required=True)
 	parser.add_argument('--outModel_Oncogene',type=str,required=True)
 	parser.add_argument('--outModel_TumorSuppressor',type=str,required=True)
+	parser.add_argument('--conservativeThresholds',action='store_true')
 
 	args = parser.parse_args()
 
-	thresholds = {'Driver':0.80, 'Oncogene': 0.76, 'Tumor_Suppressor': 0.92}
+	if args.conservativeThresholds:
+		thresholds = {'Driver':0.80, 'Oncogene': 0.76, 'Tumor_Suppressor': 0.92}
+	else:
+		thresholds = {'Driver':0.5, 'Oncogene': 0.5, 'Tumor_Suppressor': 0.5}
 
 	for relationType,outModel in zip(['Driver','Oncogene','Tumor_Suppressor'], [args.outModel_Driver,args.outModel_Oncogene,args.outModel_TumorSuppressor] ):
 		print("Building %s model" % relationType)
