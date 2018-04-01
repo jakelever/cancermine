@@ -22,5 +22,7 @@ run:
    - python parseAndFindEntities.py --biocFile {IN:PMCOA/%} --filterTerms filterTerms.txt --wordlistPickle cancermine_terms.pickle --outSentencesFilename {OUT:sentenceData/%.json}
    - python applyModelsToSentences.py --models model/cancermine.driver.model,model/cancermine.oncogene.model,model/cancermine.tumorsuppressor.model --filterTerms filterTerms.txt --wordlistPickle cancermine_terms.pickle --genes terms_genes.txt --cancerTypes terms_cancer.txt --sentenceFile {IN:sentenceData/%.json} --outData {OUT:out/%.tsv}
    - find {IN:out} -type f | xargs cat | sort -u > {OUT:uniq.tsv}
-   - cat header.tsv {IN:uniq.tsv} > {OUT:cancermine.tsv}
-output: cancermine.tsv
+   - cat header.tsv {IN:uniq.tsv} > {OUT:cancermine_all.tsv}
+   - python filterCancermine.py --inCancermine {IN:cancermine_all.tsv} --outFiltered {IN:cancermine_conservative.tsv}
+output: cancermine_conservative.tsv
+
