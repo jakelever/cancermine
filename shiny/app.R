@@ -46,17 +46,17 @@ cancermine[cancermine$section=='floating','section'] <- 'article'
 
 
 # Do some ordering
-cancermine <- cancermine[order(cancermine$relationtype),]
+cancermine <- cancermine[order(cancermine$role),]
 cancermine <- cancermine[order(cancermine$cancer_normalized),]
 cancermine <- cancermine[order(cancermine$gene_normalized),]
 cancermine <- cancermine[order(cancermine$year,decreasing=T),]
 
-cancermineUniquePMIDs <- cancermine[,c('pmid','relationtype','gene_normalized','cancer_normalized')]
+cancermineUniquePMIDs <- cancermine[,c('pmid','role','gene_normalized','cancer_normalized')]
 cancermineUniquePMIDs <- cancermineUniquePMIDs[!duplicated(cancermineUniquePMIDs),]
 
-cancermineCounts <- plyr::count(cancermineUniquePMIDs[,c('relationtype','gene_normalized','cancer_normalized')])
+cancermineCounts <- plyr::count(cancermineUniquePMIDs[,c('role','gene_normalized','cancer_normalized')])
 cancermineCounts <- as.data.table(cancermineCounts)
-cancermineCounts <- cancermineCounts[order(cancermineCounts$relationtype),]
+cancermineCounts <- cancermineCounts[order(cancermineCounts$role),]
 cancermineCounts <- cancermineCounts[order(cancermineCounts$cancer_normalized),]
 cancermineCounts <- cancermineCounts[order(cancermineCounts$gene_normalized),]
 
@@ -127,13 +127,13 @@ input <- data.frame(gene_input='EGFR', stringsAsFactors=FALSE)
 
 server <- function(input, output, session) {
   geneData <- reactive({
-    table <- cancermineCounts[cancermineCounts$gene_normalized==input$gene_input,c('relationtype','gene_normalized','cancer_normalized','freq')]
+    table <- cancermineCounts[cancermineCounts$gene_normalized==input$gene_input,c('role','gene_normalized','cancer_normalized','freq')]
     if (nrow(table)>0) {
       ordering <- aggregate(table$freq,by=list(table$cancer_normalized),FUN=sum)
       colnames(ordering) <- c('cancer_normalized','totalfreq')
       table <- dplyr::inner_join(table,ordering,by='cancer_normalized')
       table <- table[order(table$totalfreq,decreasing=TRUE),]
-      table <- table[,c('relationtype','gene_normalized','cancer_normalized','freq')]
+      table <- table[,c('role','gene_normalized','cancer_normalized','freq')]
       rownames(table) <- 1:nrow(table)
     }
     table
@@ -153,19 +153,19 @@ server <- function(input, output, session) {
   output$gene_overview <- renderPlotly({
     table <- geneData()
     if (nrow(table) > 0) {
-      relationcounts <- aggregate(table$freq,by=list(table$relationtype),FUN=sum)
-      colnames(relationcounts) <- c('relationtype','freq')
+      relationcounts <- aggregate(table$freq,by=list(table$role),FUN=sum)
+      colnames(relationcounts) <- c('role','freq')
       
-      completecounts <- data.frame(relationtype=levels(relationcounts$relationtype),freq=0)
-      rownames(completecounts) <- completecounts$relationtype
-      completecounts[as.character(relationcounts$relationtype),'freq'] <- relationcounts$freq
+      completecounts <- data.frame(role=levels(relationcounts$role),freq=0)
+      rownames(completecounts) <- completecounts$role
+      completecounts[as.character(relationcounts$role),'freq'] <- relationcounts$freq
       
       completecounts$color <- "#000000"
-      completecounts[completecounts$relationtype=='Driver','color'] <- color_Driver
-      completecounts[completecounts$relationtype=='Oncogene','color'] <- color_Oncogene
-      completecounts[completecounts$relationtype=='Tumor_Suppressor','color'] <- color_TumorSuppressor
+      completecounts[completecounts$role=='Driver','color'] <- color_Driver
+      completecounts[completecounts$role=='Oncogene','color'] <- color_Oncogene
+      completecounts[completecounts$role=='Tumor_Suppressor','color'] <- color_TumorSuppressor
       
-      p <- plot_ly(completecounts, x=~relationtype, y=~freq, source='gene_barchart', type = 'bar', marker=list(color=completecounts$color)) %>%
+      p <- plot_ly(completecounts, x=~role, y=~freq, source='gene_barchart', type = 'bar', marker=list(color=completecounts$color)) %>%
         layout(yaxis = list(title = 'Total Citation Count'), margin = list(b = 200), xaxis=list(title = "", tickangle = 90))%>% 
         config(displayModeBar = F)
       
@@ -180,7 +180,7 @@ server <- function(input, output, session) {
   output$gene_barchart <- renderPlotly({
     table <- geneData()
     if (nrow(table) > 0) {
-      unmelted <- dcast(table, cancer_normalized~relationtype, sum, drop=F, value.var="freq")
+      unmelted <- dcast(table, cancer_normalized~role, sum, drop=F, value.var="freq")
       unmelted$total <- unmelted$Driver + unmelted$Oncogene + unmelted$Tumor_Suppressor
       unmelted <- unmelted[unmelted$total>0,]
       unmelted <- unmelted[order(unmelted$total,decreasing=T),]
@@ -204,8 +204,8 @@ server <- function(input, output, session) {
     s <- event_data("plotly_click", source = "gene_barchart")
     if (length(s) > 0) {
       table <- geneData()
-      relationtypeOptions <- c('Tumor_Suppressor','Oncogene','Driver')
-      rowNumber <- rownames(table[table$cancer_normalized==s$x & table$relationtype==relationtypeOptions[s$curveNumber+1],])
+      roleOptions <- c('Tumor_Suppressor','Oncogene','Driver')
+      rowNumber <- rownames(table[table$cancer_normalized==s$x & table$role==roleOptions[s$curveNumber+1],])
       geneTableProxy %>% selectRows(as.numeric(rowNumber))
     }
   })
@@ -214,7 +214,7 @@ server <- function(input, output, session) {
     if(length(input$gene_table_rows_selected)>0) {
       table <- geneData()
       row <- table[input$gene_table_rows_selected,]
-      entries <- cancermine[cancermine$relationtype==row$relationtype & cancermine$cancer_normalized==row$cancer_normalized & cancermine$gene_normalized==row$gene_normalized,]
+      entries <- cancermine[cancermine$role==row$role & cancermine$cancer_normalized==row$cancer_normalized & cancermine$gene_normalized==row$gene_normalized,]
     } else {
       entries <- data.frame(matrix(nrow=0,ncol=5))
       colnames(entries) <- c('pmidLink','journalShort','year','section','sentence')
@@ -235,13 +235,13 @@ server <- function(input, output, session) {
   
   
   cancerData <- reactive({
-    table <- cancermineCounts[cancermineCounts$cancer_normalized==input$cancer_input,c('relationtype','gene_normalized','cancer_normalized','freq')]
+    table <- cancermineCounts[cancermineCounts$cancer_normalized==input$cancer_input,c('role','gene_normalized','cancer_normalized','freq')]
     if (nrow(table)>0) {
       ordering <- aggregate(table$freq,by=list(table$gene_normalized),FUN=sum)
       colnames(ordering) <- c('gene_normalized','totalfreq')
       table <- dplyr::inner_join(table,ordering,by='gene_normalized')
       table <- table[order(table$totalfreq,decreasing=TRUE),]
-      table <- table[,c('relationtype','gene_normalized','cancer_normalized','freq')]
+      table <- table[,c('role','gene_normalized','cancer_normalized','freq')]
       rownames(table) <- 1:nrow(table)
     }
     table
@@ -261,19 +261,19 @@ server <- function(input, output, session) {
   output$cancer_overview <- renderPlotly({
     table <- cancerData()
     if (nrow(table) > 0) {
-      relationcounts <- aggregate(table$freq,by=list(table$relationtype),FUN=sum)
-      colnames(relationcounts) <- c('relationtype','freq')
+      relationcounts <- aggregate(table$freq,by=list(table$role),FUN=sum)
+      colnames(relationcounts) <- c('role','freq')
       
-      completecounts <- data.frame(relationtype=levels(relationcounts$relationtype),freq=0)
-      rownames(completecounts) <- completecounts$relationtype
-      completecounts[as.character(relationcounts$relationtype),'freq'] <- relationcounts$freq
+      completecounts <- data.frame(role=levels(relationcounts$role),freq=0)
+      rownames(completecounts) <- completecounts$role
+      completecounts[as.character(relationcounts$role),'freq'] <- relationcounts$freq
       
       completecounts$color <- "#000000"
-      completecounts[completecounts$relationtype=='Driver','color'] <- color_Driver
-      completecounts[completecounts$relationtype=='Oncogene','color'] <- color_Oncogene
-      completecounts[completecounts$relationtype=='Tumor_Suppressor','color'] <- color_TumorSuppressor
+      completecounts[completecounts$role=='Driver','color'] <- color_Driver
+      completecounts[completecounts$role=='Oncogene','color'] <- color_Oncogene
+      completecounts[completecounts$role=='Tumor_Suppressor','color'] <- color_TumorSuppressor
       
-      p <- plot_ly(completecounts, x=~relationtype, y=~freq, source='gene_barchart', type = 'bar', marker=list(color=completecounts$color)) %>%
+      p <- plot_ly(completecounts, x=~role, y=~freq, source='gene_barchart', type = 'bar', marker=list(color=completecounts$color)) %>%
         layout(yaxis = list(title = 'Total Citation Count'), margin = list(b = 200), xaxis=list(title = "", tickangle = 90))%>% 
         config(displayModeBar = F)
       
@@ -288,7 +288,7 @@ server <- function(input, output, session) {
   output$cancer_barchart <- renderPlotly({
     table <- cancerData()
     if (nrow(table) > 0) {
-      unmelted <- dcast(table, gene_normalized~relationtype, sum, drop=F, value.var="freq")
+      unmelted <- dcast(table, gene_normalized~role, sum, drop=F, value.var="freq")
       unmelted$total <- unmelted$Driver + unmelted$Oncogene + unmelted$Tumor_Suppressor
       unmelted <- unmelted[unmelted$total>0,]
       unmelted <- unmelted[order(unmelted$total,decreasing=T),]
@@ -312,8 +312,8 @@ server <- function(input, output, session) {
     s <- event_data("plotly_click", source = "cancer_barchart")
     if (length(s) > 0) {
       table <- cancerData()
-      relationtypeOptions <- c('Tumor_Suppressor','Oncogene','Driver')
-      rowNumber <- rownames(table[table$gene_normalized==s$x & table$relationtype==relationtypeOptions[s$curveNumber+1],])
+      roleOptions <- c('Tumor_Suppressor','Oncogene','Driver')
+      rowNumber <- rownames(table[table$gene_normalized==s$x & table$role==roleOptions[s$curveNumber+1],])
       cancerTableProxy %>% selectRows(as.numeric(rowNumber))
     }
   })
@@ -325,7 +325,7 @@ server <- function(input, output, session) {
     } else {
       table <- cancerData()
       row <- table[input$cancer_table_rows_selected,]
-      entries <- cancermine[cancermine$relationtype==row$relationtype & cancermine$cancer_normalized==row$cancer_normalized & cancermine$gene_normalized==row$gene_normalized,]
+      entries <- cancermine[cancermine$role==row$role & cancermine$cancer_normalized==row$cancer_normalized & cancermine$gene_normalized==row$gene_normalized,]
       
       cat(entries$preparedText,sep='<br /><br />')
     }
@@ -336,7 +336,7 @@ server <- function(input, output, session) {
     if(length(input$cancer_table_rows_selected)>0) {
       table <- cancerData()
       row <- table[input$cancer_table_rows_selected,]
-      entries <- cancermine[cancermine$relationtype==row$relationtype & cancermine$cancer_normalized==row$cancer_normalized & cancermine$gene_normalized==row$gene_normalized,]
+      entries <- cancermine[cancermine$role==row$role & cancermine$cancer_normalized==row$cancer_normalized & cancermine$gene_normalized==row$gene_normalized,]
     } else {
       entries <- data.frame(matrix(nrow=0,ncol=5))
       colnames(entries) <- c('pmidLink','journalShort','year','section','sentence')
