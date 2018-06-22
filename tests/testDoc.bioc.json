@@ -1,0 +1,112 @@
+[
+  {
+    "title": "A fun title for a paper",
+    "pmid": "12345678",
+    "pmcid": "110011001100",
+    "year": "2000",
+    "journal": "Test Journal",
+    "journalISO": "T. Journal",
+    "section": "abstract",
+    "id": "28330089",
+    "sentence": "The HOX1-MLL2 fusion gene is a tumor suppressor in colorectal cancer."
+  },
+  {
+    "title": "A fun title for a paper",
+    "pmid": "12345678",
+    "pmcid": "110011001100",
+    "year": "2000",
+    "journal": "Test Journal",
+    "journalISO": "T. Journal",
+    "section": "abstract",
+    "id": "28330089",
+    "sentence": "The HER2-neu gene is a tumor suppressor in skin cancer."
+  },
+  {
+    "title": "A fun title for a paper",
+    "pmid": "12345678",
+    "pmcid": "110011001100",
+    "year": "2000",
+    "journal": "Test Journal",
+    "journalISO": "T. Journal",
+    "section": "abstract",
+    "id": "28330089",
+    "sentence": "The HER2/neu gene is a tumor suppressor in glioblastoma."
+  },
+  {
+    "title": "A fun title for a paper",
+    "pmid": "12345678",
+    "pmcid": "110011001100",
+    "year": "2000",
+    "journal": "Test Journal",
+    "journalISO": "T. Journal",
+    "section": "abstract",
+    "id": "28330089",
+    "sentence": "mir-1 is a tumor suppressor in lung cancer."
+  },
+  {
+    "title": "A fun title for a paper",
+    "pmid": "12345678",
+    "pmcid": "110011001100",
+    "year": "2000",
+    "journal": "Test Journal",
+    "journalISO": "T. Journal",
+    "section": "abstract",
+    "id": "28330089",
+    "sentence": "mir-5 is a tumor suppressor in non-small-cell lung carcinoma (NSCLC)."
+  },
+  {
+    "title": "A fun title for a paper",
+    "pmid": "12345678",
+    "pmcid": "110011001100",
+    "year": "2000",
+    "journal": "Test Journal",
+    "journalISO": "T. Journal",
+    "section": "abstract",
+    "id": "28330089",
+    "sentence": "HER2 (ERBB2) is a tumor suppressor in pancreatic cancer."
+  },
+  {
+    "title": "A fun title for a paper",
+    "pmid": "12345678",
+    "pmcid": "110011001100",
+    "year": "2000",
+    "journal": "Test Journal",
+    "journalISO": "T. Journal",
+    "section": "abstract",
+    "id": "28330089",
+    "sentence": "EGFR is a tumor suppressor in null cell acute lymphoblastic leukaemia (NCALL)."
+  },
+  {
+    "title": "A fun title for a paper",
+    "pmid": "12345678",
+    "pmcid": "110011001100",
+    "year": "2000",
+    "journal": "Test Journal",
+    "journalISO": "T. Journal",
+    "section": "abstract",
+    "id": "28330089",
+    "sentence": "mir1 is an oncogene in leukemia."
+  },
+  {
+    "title": "A fun title for a paper",
+    "pmid": "12345678",
+    "pmcid": "110011001100",
+    "year": "2000",
+    "journal": "Test Journal",
+    "journalISO": "T. Journal",
+    "section": "abstract",
+    "id": "28330089",
+    "sentence": "mir100 is an oncogene in lymphoma."
+  },
+  {
+    "title": "A fun title for a paper",
+    "pmid": "12345678",
+    "pmcid": "110011001100",
+    "year": "2000",
+    "journal": "Test Journal",
+    "journalISO": "T. Journal",
+    "section": "abstract",
+    "id": "28330089",
+    "sentence": "DPP9-AS1 drives acute lymphoblastic leukemia."
+  }
+]

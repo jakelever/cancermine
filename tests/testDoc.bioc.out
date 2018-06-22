@@ -1,0 +1,15 @@
+12345678	A fun title for a paper	Test Journal	2000	abstract	Tumor_Suppressor	DOID:5672;DOID:9256	colorectal cancer	colorectal cancer	combo|HGNC:5099;HGNC:5100;HGNC:5101;HGNC:5102;HGNC:5104;HGNC:5105;HGNC:5106;HGNC:5107;HGNC:5108;HGNC:5109|HGNC:15840;HGNC:7133	HOX1-MLL2	HOXA1;HOXA10;HOXA11;HOXA13;HOXA3;HOXA4;HOXA5;HOXA6;HOXA7;HOXA9|KMT2B;KMT2D	
+      The HOX1-MLL2 fusion gene is a tumor suppressor in colorectal cancer.
+      
+12345678	A fun title for a paper	Test Journal	2000	abstract	Tumor_Suppressor	DOID:4159	skin cancer	skin cancer	HGNC:3430	HER2-neu	ERBB2	The HER2-neu gene is a tumor suppressor in skin cancer.
+      
+12345678	A fun title for a paper	Test Journal	2000	abstract	Tumor_Suppressor	DOID:3068	glioblastoma	glioblastoma multiforme	HGNC:3430	HER2/neu	ERBB2	The HER2/neu gene is a tumor suppressor in glioblastoma.
+      
+12345678	A fun title for a paper	Test Journal	2000	abstract	Tumor_Suppressor	DOID:1324;DOID:3905	lung cancer	lung cancer	mirna|mir-1	mir-1	miR-1	mir-1 is a tumor suppressor in lung cancer.
+      
+12345678	A fun title for a paper	Test Journal	2000	abstract	Tumor_Suppressor	DOID:3908	non-small-cell lung carcinoma (NSCLC)	non-small cell lung carcinoma	mirna|mir-5	mir-5	miR-5	mir-5 is a tumor suppressor in non-small-cell lung carcinoma (NSCLC).
+      
+12345678	A fun title for a paper	Test Journal	2000	abstract	Tumor_Suppressor	DOID:1793;DOID:4905	pancreatic cancer	pancreatic cancer	HGNC:3430	HER2 (ERBB2)	ERBB2	HER2 (ERBB2) is a tumor suppressor in pancreatic cancer.
+      
+12345678	A fun title for a paper	Test Journal	2000	abstract	Tumor_Suppressor	DOID:9954	null cell acute lymphoblastic leukaemia	null-cell leukemia	HGNC:3236	EGFR	EGFR	EGFR is a tumor suppressor in null cell acute lymphoblastic leukaemia (NCALL).
+      
