@@ -5,8 +5,9 @@ resources:
    full:
       - PUBMED:
          format: bioc
-         removePMCOADuplicates: True
       - PMCOA:
+         format: bioc
+      - PMCAMC:
          format: bioc
    test:
       - PUBMED_CUSTOM:
@@ -20,7 +21,8 @@ resources:
 run:
    - python parseAndFindEntities.py --biocFile {IN:PUBMED/%} --filterTerms filterTerms.txt --wordlistPickle cancermine_terms.pickle --outSentencesFilename {OUT:sentenceData/%.json}
    - python parseAndFindEntities.py --biocFile {IN:PMCOA/%} --filterTerms filterTerms.txt --wordlistPickle cancermine_terms.pickle --outSentencesFilename {OUT:sentenceData/%.json}
-   - python applyModelsToSentences.py --models model/cancermine.driver.model,model/cancermine.oncogene.model,model/cancermine.tumorsuppressor.model --filterTerms filterTerms.txt --wordlistPickle cancermine_terms.pickle --genes terms_genes.txt --cancerTypes terms_cancer.txt --sentenceFile {IN:sentenceData/%.json} --outData {OUT:out/%.tsv}
+   - python parseAndFindEntities.py --biocFile {IN:PMCAMC/%} --filterTerms filterTerms.txt --wordlistPickle cancermine_terms.pickle --outSentencesFilename {OUT:sentenceData/%.json}
+   - python applyModelsToSentences.py --models model/cancermine.driver.model,model/cancermine.oncogene.model,model/cancermine.tumorsuppressor.model --filterTerms filterTerms.txt --wordlistPickle cancermine_terms.pickle --genes terms_genes.tsv --cancerTypes terms_cancers.tsv --sentenceFile {IN:sentenceData/%.json} --outData {OUT:out/%.tsv}
    - find {IN:out} -type f | xargs cat | sort -u > {OUT:uniq.tsv}
    - cat header.tsv {IN:uniq.tsv} > {OUT:cancermine_all.tsv}
    - python filterCancermine.py --inCancermine {IN:cancermine_all.tsv} --outFiltered {OUT:cancermine_conservative.tsv}
