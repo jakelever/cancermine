@@ -5,7 +5,7 @@ import os
 from collections import Counter
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description='Build and save a classifier')
+	parser = argparse.ArgumentParser(description='Count candidate relations in corpus and different annotation counts')
 	parser.add_argument('--inTrain',type=str,required=True)
 
 	args = parser.parse_args()
