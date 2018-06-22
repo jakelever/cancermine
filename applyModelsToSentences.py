@@ -42,13 +42,16 @@ def normalizeMIRName(externalID):
 def applyFinalFilter(row):
 	# Filter out incorrect output with some rules
 
-	headers = ['pmid', 'title', 'journal', 'year', 'month', 'day', 'section', 'subsection', 'role', 'predictprob', 'cancer_id', 'cancer_name', 'cancer_normalized', 'cancer_start', 'cancer_end', 'gene_id', 'gene_name', 'gene_normalized', 'gene_start', 'gene_end', 'sentence']
+	headers = ['pmid', 'title', 'journal', 'year', 'month', 'day', 'section', 'subsection', 'role', 'predictprob', 'cancer_id', 'cancer_name', 'cancer_normalized', 'cancer_start', 'cancer_end', 'gene_hugo_id', 'gene_entrez_id', 'gene_name', 'gene_normalized', 'gene_start', 'gene_end', 'sentence']
 	assert len(row) == len(headers), "Number of columns in output data (%d) doesn't  match with header count (%d)" % (len(row),len(headers))
 
 	row = { h:v for h,v in zip(headers,row) }
 
 	# Check for the number of semicolons (suggesting a list)
 	if row['sentence'].count(';') > 5:
+		return False
+
+	if row['section'] == 'back':
 		return False
 
 	return True
@@ -63,10 +66,12 @@ def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,canc
 			models[modelFilename] = pickle.load(f)
 
 	IDToTerm = {}
+	Hugo2Entrez = defaultdict(lambda : 'NA')
 	with codecs.open(genes,'r','utf-8') as f:
 		for line in f:
-			geneid,singleterm,_ = line.strip().split('\t')
-			IDToTerm[geneid] = singleterm
+			gene_hugo_id,singleterm,_,gene_entrez_id = line.strip().split('\t')
+			IDToTerm[gene_hugo_id] = singleterm
+			Hugo2Entrez[gene_hugo_id] = gene_entrez_id
 
 	with codecs.open(cancerTypes,'r','utf-8') as f:
 		for line in f:
@@ -104,7 +109,7 @@ def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,canc
 	print("%s : parsed" % now())
 
 	startTime = time.time()
-	ner = kindred.EntityRecognizer(lookup=termLookup,detectFusionGenes=True,detectMicroRNA=True,acronymDetectionForAmbiguity=True,mergeTerms=True,removePathways=True)
+	ner = kindred.EntityRecognizer(lookup=termLookup,detectFusionGenes=True,detectMicroRNA=False,acronymDetectionForAmbiguity=True,mergeTerms=True,removePathways=True)
 	ner.annotate(corpus)
 	timers['ner'] += time.time() - startTime
 	print("%s : ner" % now())
@@ -123,14 +128,14 @@ def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,canc
 			if len(doc.relations) == 0:
 				continue
 
-			eID_to_sentence = {}
+			entity_to_sentence = {}
 			for sentence in doc.sentences:
-				for eID in sentence.getEntityIDs():
-					eID_to_sentence[eID] = sentence
-			eID_to_entity = doc.getEntityIDsToEntities()
+				for entity,tokenIndices in sentence.entityAnnotations:
+					assert not entity in entity_to_sentence
+					entity_to_sentence[entity] = sentence
 
 			for relation in doc.relations:
-				sentence = eID_to_sentence[relation.entityIDs[0]]
+				sentence = entity_to_sentence[relation.entities[0]]
 				sentenceTextLower = sentence.text.lower()
 
 				hasFilterTerm = any( filterTerm in sentenceTextLower for filterTerm in filterTerms )
@@ -143,9 +148,11 @@ def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,canc
 
 				relType = relation.relationType
 				entityData = []
-				for eID in relation.entityIDs:
-					entity = eID_to_entity[eID]
+				for entity in relation.entities:
 					entityData.append(entity.externalID)
+					if entity.entityType == 'gene':
+						entityData.append(Hugo2Entrez[entity.externalID])
+
 					entityData.append(entity.text)
 
 
