@@ -39,7 +39,7 @@ def parseAndFindEntities(biocFile,filterTermsFile,wordlistPickle,outSentencesFil
 
 	print("%s : processing..." % now())
 	parser = kindred.Parser()
-	ner = kindred.EntityRecognizer(lookup=termLookup,detectFusionGenes=True,detectMicroRNA=True,acronymDetectionForAmbiguity=True,mergeTerms=True)
+	ner = kindred.EntityRecognizer(lookup=termLookup,detectFusionGenes=True,detectMicroRNA=False,acronymDetectionForAmbiguity=True,mergeTerms=True)
 	for corpusno,corpus in enumerate(kindred.iterLoadDataFromBioc(biocFile)):
 		startTime = time.time()
 		corpus = filterCorpus(corpus,filterTerms)
@@ -72,7 +72,7 @@ def parseAndFindEntities(biocFile,filterTermsFile,wordlistPickle,outSentencesFil
 
 				entityinSentence = {'cancer':False,'gene':False}
 
-				entityTypesInSentence = sentence.entityIDToType.values()
+				entityTypesInSentence = [ entity.entityType for entity,tokenIndices in sentence.entityAnnotations ]
 				entityinSentence['cancer'] = 'cancer' in entityTypesInSentence
 				entityinSentence['gene'] = 'gene' in entityTypesInSentence
 
