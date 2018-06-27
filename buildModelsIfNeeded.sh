@@ -3,10 +3,12 @@ set -eux
 
 if [ ! -d models ]; then
 	mkdir models
-	unzip -qq data/cancermine_corpus.zip
-	mv cancermine_corpus/train/ cancermine_corpus/combined/
-	mv cancermine_corpus/test/* cancermine_corpus/combined/
 
-	python buildModels.py --inTrain cancermine_corpus/combined/ --outModel_Driver model/cancermine.driver.model --outModel_Oncogene model/cancermine.oncogene.model --outModel_TumorSuppressor model/cancermine.tumorsuppressor.model
+	mkdir cancermine_corpus
+	cd cancermine_corpus
+	unzip -j -qq ../data/cancermine_corpus.zip
+	cd -
+
+	python buildModels.py --inTrain cancermine_corpus --outModel_Driver models/cancermine.driver.model --outModel_Oncogene models/cancermine.oncogene.model --outModel_TumorSuppressor models/cancermine.tumorsuppressor.model
 fi
 
