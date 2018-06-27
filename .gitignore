@@ -3,3 +3,7 @@
 cancermine_corpus
 data/cancermine_corpus
 mypy3/
+models/
+cancermine_terms.pickle
+setupenv*
+lib/
