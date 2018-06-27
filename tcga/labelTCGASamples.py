@@ -46,15 +46,9 @@ if __name__ == '__main__':
 
 	cancerGeneLists = {}
 	for cancer_name,geneNameWithCitations in cancerGeneCitations.items():
-		#geneNameWithCitations = { gene_name:citations for gene_name,citations in geneNameWithCitations.items() if len(citations) >= 3 }
-		#gene_names = [ gene_name for gene_name,citations in geneNameWithCitations.items() if len(citations) >= 3 ]
-		#total_citations = sum( [ len(citations) for gene_name,citations in geneNameWithCitations.items() ] )
-		#gene_names = { gene_name:len(citations)/total_citations for gene_name,citations in geneNameWithCitations.items() }
 		gene_names = { gene_name:math.log10(len(citations)+1) for gene_name,citations in geneNameWithCitations.items() }
-		#total = sum(gene_names.values())
 		total = max(gene_names.values())
 		gene_names = { gene_name:score/total for gene_name,score in gene_names.items() }
-		#gene_names = { gene_name:len(citations) for gene_name,citations in geneNameWithCitations.items() }
 
 		gene_names_defaultDict = Counter()
 		gene_names_defaultDict.update(gene_names)
@@ -64,68 +58,28 @@ if __name__ == '__main__':
 		for line in f:
 			gene,sample = line.strip('\n').split('\t')
 
-			#if gene in cancermineGenes:
 			samples[sample].add(gene)
 			genes.add(gene)
 
 	cancerFilter = ['colorectal cancer','breast cancer','hepatocellular carcinoma','prostate cancer','lung cancer','malignant glioma','stomach cancer']
 	cancerGeneLists = { cancer:geneList for cancer,geneList in cancerGeneLists.items() if cancer in cancerFilter }
 
-	#groupCounter = Counter()
-	#sampleGenes = [ gene for sampleID,sample in samples.items() for gene in sample ]
-	#for cancerType,cancerGeneList in cancerGeneLists.items():
-	#	count = len([ g for g in sampleGenes if g in cancerGeneList ])
-	#	print("%s\t%d\t%d\t%f\t%d" % (cancerType,count,len(cancerGeneList),count/len(cancerGeneList),len(sampleGenes)))
-
-	#fingerprint = cancerGeneLists['lung cancer']
-	#print(sorted( [ (score,gene) for gene,score in fingerprint.items() ] ))
-	#assert False
-			
-	#sys.exit(0)
-
-	#print( [ (cancerType,len(cancerGeneList)) for cancerType,cancerGeneList in cancerGeneLists.items() ] )
-	#assert False
-	#for gene,score in cancerGeneLists['malignant glioma'].items():
-	#	print("%s\t%f" % (gene,score))
-	#assert False
-	#sys.exit(0)
-
-
 	def scoreIt(sampleGenes,fingerprint,allGenes):
-		#overlapped = [ g for g in sampleGenes if g in cancerGenes ]
-		#return len(set(overlapped))#/len(cancerGenes)
 		return sum( fingerprint[g] for g in sampleGenes )
-	#	selected = sorted([ (score,g) for g,score in fingerprint.items() ],reverse=True)
-	#	selected = set([ g for score,g in selected if score > 0.001 ])
-	#	return sum( 1 for g in sampleGenes if g in selected )
 
 	for sampleID in samples:
-		#for cancerType,cancerGeneList in cancerGeneLists.items():
-		#	print("%s\t%s\t%f" % (sampleID,cancerType,enrich(samples[sampleID],cancerGeneList,genes)))
-
-		#scores = [ [cancerType,overlap(samples[sampleID],cancerGeneList,genes)] for cancerType,cancerGeneList in cancerGeneLists.items() ]
-		#scores = sorted(scores)
-		#score,bestCancerType = scores[0]
-		#scoresTxt = "\t".join(map(str,sum(scores,[])))
-		#if score < 0.05:
-		#print("%s\t%d\t%s" % (sampleID,len(samples[sampleID]),scoresTxt))
-
 		scores = [ (scoreIt(samples[sampleID],cancerGeneList,genes),cancerType) for cancerType,cancerGeneList in cancerGeneLists.items() ]
 		scores = sorted(scores,reverse=True)
-		#print(scores)
+
 		if scores[0][0] == 0:
 			score,bestCancerType = -1,"X no TS"
 		elif scores[0][0] > scores[1][0]:
 			score,bestCancerType = scores[0]
 		else:
 			score,bestCancerType = -1,"unclear"
-		#scoresTxt = "\t".join(map(str,sum(scores,[])))
-		#if score < 0.05:
+
 		print("%s\t%s\t%f" % (sampleID,bestCancerType,score))
 
-		#for score,cancerType in scores:
-		#	print("%s\t%s\t%s\t%f" % (args.tcgaData,sampleID,cancerType,score))
-		
 		sys.stdout.flush()
 
 
