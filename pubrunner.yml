@@ -3,6 +3,7 @@ version: 0.1
 url: https://github.com/jakelever/cancermine
 resources:
    full:
+      - BIOWORDLISTS
       - PUBMED:
          format: bioc
       - PMCOA:
@@ -10,6 +11,8 @@ resources:
       - PMCAMC:
          format: bioc
    test:
+      - BIOWORDLISTS_TEST:
+         rename: BIOWORDLISTS
       - PUBMED_CUSTOM:
          pmids: 24427302
          format: bioc
@@ -19,10 +22,12 @@ resources:
          format: bioc
          rename: PMCOA
 run:
+   - sh buildModelsIfNeeded.sh
+   - sh pickleWordlistIfNeeded.sh {IN:BIOWORDLISTS}
    - python parseAndFindEntities.py --biocFile {IN:PUBMED/%} --filterTerms filterTerms.txt --wordlistPickle cancermine_terms.pickle --outSentencesFilename {OUT:sentenceData/%.json}
    - python parseAndFindEntities.py --biocFile {IN:PMCOA/%} --filterTerms filterTerms.txt --wordlistPickle cancermine_terms.pickle --outSentencesFilename {OUT:sentenceData/%.json}
    - python parseAndFindEntities.py --biocFile {IN:PMCAMC/%} --filterTerms filterTerms.txt --wordlistPickle cancermine_terms.pickle --outSentencesFilename {OUT:sentenceData/%.json}
-   - python applyModelsToSentences.py --models model/cancermine.driver.model,model/cancermine.oncogene.model,model/cancermine.tumorsuppressor.model --filterTerms filterTerms.txt --wordlistPickle cancermine_terms.pickle --genes terms_genes.tsv --cancerTypes terms_cancers.tsv --sentenceFile {IN:sentenceData/%.json} --outData {OUT:out/%.tsv}
+   - python applyModelsToSentences.py --models models/cancermine.driver.model,models/cancermine.oncogene.model,models/cancermine.tumorsuppressor.model --filterTerms filterTerms.txt --wordlistPickle cancermine_terms.pickle --genes {IN:BIOWORDLISTS/terms_genes.tsv} --cancerTypes {IN:BIOWORDLISTS/terms_cancers.tsv} --sentenceFile {IN:sentenceData/%.json} --outData {OUT:out/%.tsv}
    - find {IN:out} -type f | xargs cat | sort -u > {OUT:uniq.tsv}
    - cat header.tsv {IN:uniq.tsv} > {OUT:cancermine_all.tsv}
    - python filterCancermine.py --inCancermine {IN:cancermine_all.tsv} --outFiltered {OUT:cancermine_conservative.tsv}
