@@ -1,0 +1,4 @@
+name: BIOWORDLISTS_TEST
+type: remote
+url: http://bcgsc.ca/downloads/jlever/BIOWORDLISTS_TEST.tar.gz
+unzip: True
