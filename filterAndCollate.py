@@ -15,6 +15,7 @@ if __name__ == '__main__':
 	collated = defaultdict(set)
 	collatedMatchingID = {}
 
+	sentenceOrdering = set()
 	sentenceData = {}
 	geneLocs = defaultdict(set)
 	cancerLocs = defaultdict(set)
@@ -48,6 +49,10 @@ if __name__ == '__main__':
 				if pmid == 'None':
 					continue # Uncitable so we skip it
 
+				r['journal_short'] = r['journal']
+				if len(r['journal_short']) > 50:
+					r['journal_short'] = r['journal_short'][:50] + '...'
+
 				collatedKeyFields = 'role,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized'
 				collatedKey = tuple( [ r[k] for k in collatedKeyFields.split(',') ] )
 				collated[collatedKey].add(pmid)
@@ -56,9 +61,10 @@ if __name__ == '__main__':
 				matchingID = hashlib.md5("|".join(list(collatedKey)).encode('utf-8')).hexdigest()
 				collatedMatchingID[collatedKey] = matchingID
 
-				sentenceKeyFields = 'pmid,title,journal,year,month,day,section,subsection,role,predictprob,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized,sentence'
+				sentenceKeyFields = 'pmid,title,journal,journal_short,year,month,day,section,subsection,role,predictprob,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized,sentence'
 				sentenceKey = tuple( [ r[k] for k in sentenceKeyFields.split(',') ] )
 				sentenceData[sentenceKey] = matchingID
+				sentenceOrdering.add( (r['year'],sentenceKey) )
 				geneLocs[sentenceKey].add((int(r['gene_start']),int(r['gene_end'])))
 				cancerLocs[sentenceKey].add((int(r['cancer_start']),int(r['cancer_end'])))
 
@@ -67,24 +73,32 @@ if __name__ == '__main__':
 		headers = 'matching_id,role,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized,citation_count'
 		headerCount = len(headers.split(','))
 		outF.write(headers.replace(',','\t') + '\n')
-		for collatedKey,citations in collated.items():
+
+		collatedCounts = [ (len(pmids),key) for key,pmids in collated.items() ]
+		collatedCounts = sorted(collatedCounts,reverse=True)
+		for citation_count,collatedKey in collatedCounts:
+
 			role,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized = collatedKey
 
-			citation_count = str(len(citations))
 			matchingID = collatedMatchingID[collatedKey]
 
-			outData = [matchingID,role,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized,citation_count]
+			outData = [matchingID,role,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized,str(citation_count)]
 			assert len(outData) == headerCount
 
 			outLine = "\t".join(outData)
 			outF.write(outLine + "\n")
 
 	with open(args.outSentences,'w') as outF:
-		headers = 'matching_id,pmid,title,journal,year,month,day,section,subsection,role,predictprob,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized,sentence,formatted_sentence'
+		headers = 'matching_id,pmid,title,journal,journal_short,year,month,day,section,subsection,role,predictprob,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized,sentence,formatted_sentence'
 		headerCount = len(headers.split(','))
 		outF.write(headers.replace(',','\t') + '\n')
-		for sentenceKey,matchingID in sentenceData.items():
-			pmid,title,journal,year,month,day,section,subsection,role,predictprob,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized,sentence = sentenceKey
+
+		sentenceOrdering = sorted(list(sentenceOrdering),reverse=True)
+
+		for _,sentenceKey in sentenceOrdering:
+			matchingID = sentenceData[sentenceKey]
+
+			pmid,title,journal,journal_short,year,month,day,section,subsection,role,predictprob,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized,sentence = sentenceKey
 
 			charByChar = list(sentence)
 			for start,end in geneLocs[sentenceKey]:
@@ -96,7 +110,7 @@ if __name__ == '__main__':
 
 			formattedSentence = "".join(charByChar)
 
-			outData = [ matchingID, pmid,title,journal,year,month,day,section,subsection,role,predictprob,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized,sentence, formattedSentence ]
+			outData = [ matchingID, pmid,title,journal,journal_short,year,month,day,section,subsection,role,predictprob,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized,sentence, formattedSentence ]
 			assert len(outData) == headerCount
 
 			outLine = "\t".join(outData)
