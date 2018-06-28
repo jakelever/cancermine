@@ -14,11 +14,11 @@ resources:
       - BIOWORDLISTS_TEST:
          rename: BIOWORDLISTS
       - PUBMED_CUSTOM:
-         pmids: 24427302
+         pmids: 28714950
          format: bioc
          rename: PUBMED
       - PMCOA_CUSTOM:
-         pmcids: 3960274
+         pmcids: 5776432
          format: bioc
          rename: PMCOA
 run:
