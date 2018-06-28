@@ -32,5 +32,7 @@ run:
    - cat header.tsv {IN:uniq.tsv} > {OUT:cancermine_unfiltered.tsv}
    - python filterAndCollate.py --inUnfiltered {IN:cancermine_unfiltered.tsv} --outCollated {OUT:cancermine_collated.tsv} --outSentences {OUT:cancermine_sentences.tsv}
 output:
+   - cancermine_unfiltered.tsv
    - cancermine_collated.tsv
    - cancermine_sentences.tsv
+output_description_file: output_description.md
