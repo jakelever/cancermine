@@ -18,60 +18,24 @@ if (!file.exists('google-analytics.js'))
   file.create('google-analytics.js')
 }
 
+collatedFilename <- 'cancermine_collated.tsv'
+sentencesFilename <- 'cancermine_sentences.tsv'
 
-cancermineFilename <- 'cancermine_latest.tsv'
-cancermineFilename <- normalizePath(cancermineFilename)
-fileInfo <- file.info(cancermineFilename)
+collatedFilename <- normalizePath(collatedFilename)
+sentencesFilename <- normalizePath(sentencesFilename)
+fileInfo <- file.info(collatedFilename)
 modifiedDate <- strsplit(as.character(fileInfo$mtime), ' ')[[1]][1]
 
-cancermine <- read.table(cancermineFilename,header=T,sep='\t',quote='',comment.char='',encoding="UTF-8")
-cancermine <- as.data.table(cancermine)
 
-# Remove citation with missing PMID (for whatever reason)
-cancermine <- cancermine[cancermine$pmid!='None',]
-cancermine$pmid <- as.integer(as.character(cancermine$pmid))
-
-# Remove the entity location columns and unique the rows
-nonLocationColumns <- grep("(start|end)",colnames(cancermine),invert=T)
-cancermine <- cancermine[,nonLocationColumns,with=FALSE]
-cancermine <- cancermine[!duplicated(cancermine),]
+collated <- fread(collatedFilename,sep='\t',header=T,stringsAsFactors=TRUE)
+sentences <- fread(sentencesFilename,sep='\t',header=T,stringsAsFactors=TRUE)
 
 # Fill in some details for the citation table
-cancermine$pmidLink <- paste("<a target=\"_blank\" href='https://www.ncbi.nlm.nih.gov/pubmed/", cancermine$pmid, "'>", cancermine$pmid, "</a>", sep='')
-cancermine$journalShort <- strtrim(cancermine$journal,51)
-cancermine[str_length(cancermine$journalShort)==51,'journalShort'] <- paste(strtrim(cancermine[str_length(cancermine$journalShort)==51,]$journalShort,50),'...',sep='')
-cancermine$journalShort <- factor(cancermine$journalShort)
-cancermine[cancermine$section=='back','section'] <- 'article'
-cancermine[cancermine$section=='floating','section'] <- 'article'
+sentences$pubmed_link <- paste("<a target=\"_blank\" href='https://www.ncbi.nlm.nih.gov/pubmed/", sentences$pmid, "'>", sentences$pmid, "</a>", sep='')
 
 
-# Do some ordering
-cancermine <- cancermine[order(cancermine$role),]
-cancermine <- cancermine[order(cancermine$cancer_normalized),]
-cancermine <- cancermine[order(cancermine$gene_normalized),]
-cancermine <- cancermine[order(cancermine$year,decreasing=T),]
-
-cancermineUniquePMIDs <- cancermine[,c('pmid','role','gene_normalized','cancer_normalized')]
-cancermineUniquePMIDs <- cancermineUniquePMIDs[!duplicated(cancermineUniquePMIDs),]
-
-cancermineCounts <- plyr::count(cancermineUniquePMIDs[,c('role','gene_normalized','cancer_normalized')])
-cancermineCounts <- as.data.table(cancermineCounts)
-cancermineCounts <- cancermineCounts[order(cancermineCounts$role),]
-cancermineCounts <- cancermineCounts[order(cancermineCounts$cancer_normalized),]
-cancermineCounts <- cancermineCounts[order(cancermineCounts$gene_normalized),]
-
-#cancermineCounts <- cancermineCounts[cancermineCounts$freq > 1,]
-
-cancermine$preparedText <- paste(cancermine$sentence, " <a href='https://www.ncbi.nlm.nih.gov/pubmed/", cancermine$pmid, "'>PMID:", cancermine$pmid, "</a>", sep='')
-
-genecounts <- plyr::count(cancermine$gene_normalized)
-genecounts <- genecounts[order(genecounts$freq),]
-
-cancercounts <- plyr::count(cancermine$cancer_normalized)
-cancercounts <- cancercounts[order(cancercounts$freq),]
-
-geneNames <- sort(unique(as.character(cancermineCounts$gene_normalized)))
-cancerNames <- sort(unique(as.character(cancermineCounts$cancer_normalized)))
+geneNames <- sort(unique(as.character(collated$gene_normalized)))
+cancerNames <- sort(unique(as.character(collated$cancer_normalized)))
 
 colors <- brewer.pal(3,'Set2')
 color_Driver <- colors[1]
@@ -82,65 +46,79 @@ citationTableExplanation <- "<br /><br /><br /><b>Citation Table:</b><br />Selec
 
 ui <- function(req) {
   fluidPage(
-  tags$head(includeHTML("google-analytics.js")),
-  titlePanel("",windowTitle="CancerMine"),
-  helpText(includeHTML("subheader.html")),
-  tabsetPanel(type = "tabs",
-              tabPanel("By Gene", 
-                       sidebarPanel(
-                         selectizeInput("gene_input", "Gene", geneNames, selected = 'EGFR', multiple = FALSE, options = list(maxOptions = 2*length(geneNames))),
-                         plotlyOutput("gene_overview"),
-                         width=3
+    tags$head(
+      includeHTML("google-analytics.js"),
+      tags$style(".rightAlign{float:right; margin-left:5px; margin-bottom: 20px;}")
+    ),
+    titlePanel("",windowTitle="CancerMine"),
+    helpText(includeHTML("subheader.html")),
+    tabsetPanel(type = "tabs",
+                tabPanel("By Gene", 
+                         sidebarPanel(
+                           selectizeInput("gene_input", "Gene", geneNames, selected = 'EGFR', multiple = FALSE, options = list(maxOptions = 2*length(geneNames))),
+                           plotlyOutput("gene_overview"),
+                           width=3
                          ),
-                       mainPanel(
-                         plotlyOutput("gene_barchart"),
-                         DT::dataTableOutput("gene_table"),
-                         HTML(citationTableExplanation),
-                         DT::dataTableOutput("gene_citations"),
-                         helpText(paste("Last updated on",modifiedDate)),
-                         helpText(includeHTML("cc0.html"))
+                         mainPanel(
+                           plotlyOutput("gene_barchart"),
+                           downloadButton("gene_download_collated_all", label = "Download All", class='rightAlign'),
+                           downloadButton("gene_download_collated_shown", label = "Download Shown", class='rightAlign'),
+                           DT::dataTableOutput("gene_table"),
+                           
+                           HTML(citationTableExplanation),
+                           downloadButton("gene_download_sentences_all", label = "Download All Sentences", class='rightAlign'),
+                           downloadButton("gene_download_sentences_shown", label = "Download Shown Sentences", class='rightAlign'),
+                           DT::dataTableOutput("gene_citations"),
+                           helpText(paste("Last updated on",modifiedDate)),
+                           helpText(includeHTML("cc0.html"))
                          )
-              ),
-              tabPanel("By Cancer", 
-                       sidebarPanel(
-                         selectizeInput("cancer_input", "Cancer", cancerNames, selected = 'colorectal cancer', multiple = FALSE, options = list(maxOptions = 2*length(cancerNames))),
-                         plotlyOutput("cancer_overview"),
-                         width=3
-                       ),
-                       mainPanel(
-                         plotlyOutput("cancer_barchart"),
-                         DT::dataTableOutput("cancer_table"),
-                         HTML(citationTableExplanation),
-                         DT::dataTableOutput("cancer_citations"),
-                         helpText(paste("Last updated on",modifiedDate)),
-                         helpText(includeHTML("cc0.html"))
-                       )
-              ),
-              tabPanel("Help", helpText(includeHTML("help.html"))),
-              tabPanel("About", helpText(includeHTML("about.html")))
+                ),
+                tabPanel("By Cancer", 
+                         sidebarPanel(
+                           selectizeInput("cancer_input", "Cancer", cancerNames, selected = 'colorectal cancer', multiple = FALSE, options = list(maxOptions = 2*length(cancerNames))),
+                           plotlyOutput("cancer_overview"),
+                           width=3
+                         ),
+                         mainPanel(
+                           plotlyOutput("cancer_barchart"),
+                           downloadButton("cancer_download_collated_all", label = "Download All", class='rightAlign'),
+                           downloadButton("cancer_download_collated_shown", label = "Download Shown", class='rightAlign'),
+                           DT::dataTableOutput("cancer_table"),
+                           
+                           HTML(citationTableExplanation),
+                           downloadButton("cancer_download_sentences_all", label = "Download All Sentences", class='rightAlign'),
+                           downloadButton("cancer_download_sentences_shown", label = "Download Shown Sentences", class='rightAlign'),
+                           DT::dataTableOutput("cancer_citations"),
+                           helpText(paste("Last updated on",modifiedDate)),
+                           helpText(includeHTML("cc0.html"))
+                         )
+                ),
+                tabPanel("Help", helpText(includeHTML("help.html"))),
+                tabPanel("About", helpText(includeHTML("about.html")))
+    )
+    
   )
-  
-)
 }
 
-input <- data.frame(gene_input='EGFR', stringsAsFactors=FALSE)
+input <- data.frame(gene_input='EGFR', cancer_input='prostate cancer', stringsAsFactors=FALSE)
 
 server <- function(input, output, session) {
   geneData <- reactive({
-    table <- cancermineCounts[cancermineCounts$gene_normalized==input$gene_input,c('role','gene_normalized','cancer_normalized','freq')]
+    table <- collated[collated$gene_normalized==input$gene_input,]
     if (nrow(table)>0) {
-      ordering <- aggregate(table$freq,by=list(table$cancer_normalized),FUN=sum)
-      colnames(ordering) <- c('cancer_normalized','totalfreq')
+      ordering <- aggregate(table$citation_count,by=list(table$cancer_normalized),FUN=sum)
+      colnames(ordering) <- c('cancer_normalized','citation_count_for_cancer')
       table <- dplyr::inner_join(table,ordering,by='cancer_normalized')
-      table <- table[order(table$totalfreq,decreasing=TRUE),]
-      table <- table[,c('role','gene_normalized','cancer_normalized','freq')]
+      table <- table[order(table$citation_count_for_cancer,decreasing=TRUE),]
+      table <- table[,colnames(table) != 'citation_count_for_cancer']
       rownames(table) <- 1:nrow(table)
     }
     table
   })
   
   output$gene_table <- DT::renderDataTable({
-    DT::datatable(geneData(),
+    table <- geneData()
+    DT::datatable(table[,c('role','gene_normalized','cancer_normalized','citation_count')],
                   selection = 'single',
                   rownames = FALSE,
                   colnames=c('Role','Gene', 'Cancer', 'Citation #'),
@@ -153,19 +131,19 @@ server <- function(input, output, session) {
   output$gene_overview <- renderPlotly({
     table <- geneData()
     if (nrow(table) > 0) {
-      relationcounts <- aggregate(table$freq,by=list(table$role),FUN=sum)
-      colnames(relationcounts) <- c('role','freq')
+      relationcounts <- aggregate(table$citation_count,by=list(table$role),FUN=sum)
+      colnames(relationcounts) <- c('role','citation_count_for_role')
       
-      completecounts <- data.frame(role=levels(relationcounts$role),freq=0)
+      completecounts <- data.frame(role=levels(relationcounts$role),citation_count_for_role=0)
       rownames(completecounts) <- completecounts$role
-      completecounts[as.character(relationcounts$role),'freq'] <- relationcounts$freq
+      completecounts[as.character(relationcounts$role),'citation_count_for_role'] <- relationcounts$citation_count_for_role
       
       completecounts$color <- "#000000"
       completecounts[completecounts$role=='Driver','color'] <- color_Driver
       completecounts[completecounts$role=='Oncogene','color'] <- color_Oncogene
       completecounts[completecounts$role=='Tumor_Suppressor','color'] <- color_TumorSuppressor
       
-      p <- plot_ly(completecounts, x=~role, y=~freq, source='gene_barchart', type = 'bar', marker=list(color=completecounts$color)) %>%
+      p <- plot_ly(completecounts, x=~role, y=~citation_count_for_role, source='gene_barchart', type = 'bar', marker=list(color=completecounts$color)) %>%
         layout(yaxis = list(title = 'Total Citation Count'), margin = list(b = 200), xaxis=list(title = "", tickangle = 90))%>% 
         config(displayModeBar = F)
       
@@ -180,7 +158,7 @@ server <- function(input, output, session) {
   output$gene_barchart <- renderPlotly({
     table <- geneData()
     if (nrow(table) > 0) {
-      unmelted <- dcast(table, cancer_normalized~role, sum, drop=F, value.var="freq")
+      unmelted <- dcast(table, cancer_normalized~role, sum, drop=F, value.var="citation_count")
       unmelted$total <- unmelted$Driver + unmelted$Oncogene + unmelted$Tumor_Suppressor
       unmelted <- unmelted[unmelted$total>0,]
       unmelted <- unmelted[order(unmelted$total,decreasing=T),]
@@ -214,18 +192,71 @@ server <- function(input, output, session) {
     if(length(input$gene_table_rows_selected)>0) {
       table <- geneData()
       row <- table[input$gene_table_rows_selected,]
-      entries <- cancermine[cancermine$role==row$role & cancermine$cancer_normalized==row$cancer_normalized & cancermine$gene_normalized==row$gene_normalized,]
+      entries <- sentences[sentences$matching_id==row$matching_id,]
     } else {
-      entries <- data.frame(matrix(nrow=0,ncol=5))
-      colnames(entries) <- c('pmidLink','journalShort','year','section','sentence')
+      entries <- data.frame(matrix(nrow=0,ncol=ncol(sentences)))
+      colnames(entries) <- colnames(sentences)
     }
-    DT::datatable(entries[,c('pmidLink','journalShort','year','section','sentence'),],
+    DT::datatable(entries[,c('pubmed_link','journal_short','year','section','subsection','formatted_sentence'),],
                   selection = 'none',
                   rownames = FALSE,
-                  colnames=c('PMID','Journal','Year', 'Section', 'Sentence'),
+                  colnames=c('PMID','Journal','Year', 'Section', 'Subsection', 'Sentence'),
                   escape = FALSE,
                   options = list(pageLength = 20))
   })
+  
+  
+  output$gene_download_collated_all <- downloadHandler(
+    filename = function() {
+      return("cancermine_collated.tsv")
+    },
+    content = function(file) {
+      outdata <- collated
+      write.table(outdata, file, row.names = FALSE, sep='\t', quote=F)
+    }
+  )
+  
+  output$gene_download_collated_shown <- downloadHandler(
+    filename = function() {
+      return("cancermine_collated_subset.tsv")
+    },
+    content = function(file) {
+      outdata <- geneData()
+      write.table(outdata, file, row.names = FALSE, sep='\t', quote=F)
+    }
+  )
+  
+  
+  output$gene_download_sentences_all <- downloadHandler(
+    filename = function() {
+      return("cancermine_sentences.tsv")
+    },
+    content = function(file) {
+      write.table(sentences, file, row.names = FALSE, sep='\t', quote=F)
+    }
+  )
+  
+  output$gene_download_sentences_shown <- downloadHandler(
+    filename = function() {
+      return("cancermine_sentences_subset.tsv")
+    },
+    content = function(file) {
+      if(length(input$gene_table_rows_selected)>0) {
+        table <- geneData()
+        row <- table[input$gene_table_rows_selected,]
+        entries <- sentences[sentences$matching_id==row$matching_id,]
+      } else {
+        entries <- data.frame(matrix(nrow=0,ncol=ncol(sentences)))
+        colnames(entries) <- colnames(sentences)
+      }
+      
+      write.table(entries, file, row.names = FALSE, sep='\t', quote=F)
+    }
+  )
+  
+  
+  
+  
   
   
   
@@ -235,20 +266,21 @@ server <- function(input, output, session) {
   
   
   cancerData <- reactive({
-    table <- cancermineCounts[cancermineCounts$cancer_normalized==input$cancer_input,c('role','gene_normalized','cancer_normalized','freq')]
+    table <- collated[collated$cancer_normalized==input$cancer_input,]
     if (nrow(table)>0) {
-      ordering <- aggregate(table$freq,by=list(table$gene_normalized),FUN=sum)
-      colnames(ordering) <- c('gene_normalized','totalfreq')
+      ordering <- aggregate(table$citation_count,by=list(table$gene_normalized),FUN=sum)
+      colnames(ordering) <- c('gene_normalized','citation_count_for_gene')
       table <- dplyr::inner_join(table,ordering,by='gene_normalized')
-      table <- table[order(table$totalfreq,decreasing=TRUE),]
-      table <- table[,c('role','gene_normalized','cancer_normalized','freq')]
+      table <- table[order(table$citation_count_for_gene,decreasing=TRUE),]
+      table <- table[,colnames(table) != 'citation_count_for_gene']
       rownames(table) <- 1:nrow(table)
     }
     table
   })
   
   output$cancer_table <- DT::renderDataTable({
-    DT::datatable(cancerData(),
+    table <- cancerData()
+    DT::datatable(table[,c('role','gene_normalized','cancer_normalized','citation_count')],
                   selection = 'single',
                   rownames = FALSE,
                   colnames=c('Role','Gene', 'Cancer', 'Citation #'),
@@ -261,19 +293,19 @@ server <- function(input, output, session) {
   output$cancer_overview <- renderPlotly({
     table <- cancerData()
     if (nrow(table) > 0) {
-      relationcounts <- aggregate(table$freq,by=list(table$role),FUN=sum)
-      colnames(relationcounts) <- c('role','freq')
+      relationcounts <- aggregate(table$citation_count,by=list(table$role),FUN=sum)
+      colnames(relationcounts) <- c('role','citation_count_for_role')
       
-      completecounts <- data.frame(role=levels(relationcounts$role),freq=0)
+      completecounts <- data.frame(role=levels(relationcounts$role),citation_count=0)
       rownames(completecounts) <- completecounts$role
-      completecounts[as.character(relationcounts$role),'freq'] <- relationcounts$freq
+      completecounts[as.character(relationcounts$role),'citation_count_for_role'] <- relationcounts$citation_count_for_role
       
       completecounts$color <- "#000000"
       completecounts[completecounts$role=='Driver','color'] <- color_Driver
       completecounts[completecounts$role=='Oncogene','color'] <- color_Oncogene
       completecounts[completecounts$role=='Tumor_Suppressor','color'] <- color_TumorSuppressor
       
-      p <- plot_ly(completecounts, x=~role, y=~freq, source='gene_barchart', type = 'bar', marker=list(color=completecounts$color)) %>%
+      p <- plot_ly(completecounts, x=~role, y=~citation_count_for_role, source='gene_barchart', type = 'bar', marker=list(color=completecounts$color)) %>%
         layout(yaxis = list(title = 'Total Citation Count'), margin = list(b = 200), xaxis=list(title = "", tickangle = 90))%>% 
         config(displayModeBar = F)
       
@@ -288,7 +320,7 @@ server <- function(input, output, session) {
   output$cancer_barchart <- renderPlotly({
     table <- cancerData()
     if (nrow(table) > 0) {
-      unmelted <- dcast(table, gene_normalized~role, sum, drop=F, value.var="freq")
+      unmelted <- dcast(table, gene_normalized~role, sum, drop=F, value.var="citation_count")
       unmelted$total <- unmelted$Driver + unmelted$Oncogene + unmelted$Tumor_Suppressor
       unmelted <- unmelted[unmelted$total>0,]
       unmelted <- unmelted[order(unmelted$total,decreasing=T),]
@@ -319,40 +351,72 @@ server <- function(input, output, session) {
   })
   
   
-  output$cancer_text <- renderPrint({
-    if(length(input$cancer_table_rows_selected)==0) {
-      cat("Select a row from the table to see the associated sentences and citations")
-    } else {
-      table <- cancerData()
-      row <- table[input$cancer_table_rows_selected,]
-      entries <- cancermine[cancermine$role==row$role & cancermine$cancer_normalized==row$cancer_normalized & cancermine$gene_normalized==row$gene_normalized,]
-      
-      cat(entries$preparedText,sep='<br /><br />')
-    }
-  })
-  
-  
   output$cancer_citations <- DT::renderDataTable({
     if(length(input$cancer_table_rows_selected)>0) {
       table <- cancerData()
       row <- table[input$cancer_table_rows_selected,]
-      entries <- cancermine[cancermine$role==row$role & cancermine$cancer_normalized==row$cancer_normalized & cancermine$gene_normalized==row$gene_normalized,]
+      entries <- sentences[sentences$matching_id==row$matching_id,]
     } else {
-      entries <- data.frame(matrix(nrow=0,ncol=5))
-      colnames(entries) <- c('pmidLink','journalShort','year','section','sentence')
+      entries <- data.frame(matrix(nrow=0,ncol=ncol(sentences)))
+      colnames(entries) <- colnames(sentences)
     }
-    DT::datatable(entries[,c('pmidLink','journalShort','year','section','sentence'),],
+    DT::datatable(entries[,c('pubmed_link','journal_short','year','section','subsection','formatted_sentence'),],
                   selection = 'none',
                   rownames = FALSE,
-                  colnames=c('PMID','Journal','Year', 'Section', 'Sentence'),
+                  colnames=c('PMID','Journal','Year', 'Section', 'Subsection', 'Sentence'),
                   escape = FALSE,
                   options = list(pageLength = 20))
   })
   
   
   
+  output$cancer_download_collated_all <- downloadHandler(
+    filename = function() {
+      return("cancermine_collated.tsv")
+    },
+    content = function(file) {
+      outdata <- collated
+      write.table(outdata, file, row.names = FALSE, sep='\t', quote=F)
+    }
+  )
+  
+  output$cancer_download_collated_shown <- downloadHandler(
+    filename = function() {
+      return("cancermine_collated_subset.tsv")
+    },
+    content = function(file) {
+      outdata <- cancerData()
+      write.table(outdata, file, row.names = FALSE, sep='\t', quote=F)
+    }
+  )
   
   
+  output$cancer_download_sentences_all <- downloadHandler(
+    filename = function() {
+      return("cancermine_sentences.tsv")
+    },
+    content = function(file) {
+      write.table(sentences, file, row.names = FALSE, sep='\t', quote=F)
+    }
+  )
+  
+  output$cancer_download_sentences_shown <- downloadHandler(
+    filename = function() {
+      return("cancermine_sentences_subset.tsv")
+    },
+    content = function(file) {
+      if(length(input$cancer_table_rows_selected)>0) {
+        table <- cancerData()
+        row <- table[input$cancer_table_rows_selected,]
+        entries <- sentences[sentences$matching_id==row$matching_id,]
+      } else {
+        entries <- data.frame(matrix(nrow=0,ncol=ncol(sentences)))
+        colnames(entries) <- colnames(sentences)
+      }
+      
+      write.table(entries, file, row.names = FALSE, sep='\t', quote=F)
+    }
+  )
   
   
   
