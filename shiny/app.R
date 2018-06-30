@@ -67,6 +67,7 @@ ui <- function(req) {
                            
                            HTML(citationTableExplanation),
                            downloadButton("gene_download_sentences_all", label = "Download All Sentences", class='rightAlign'),
+                           downloadButton("gene_download_sentences_above", label = "Download Sentences for this Gene", class='rightAlign'),
                            downloadButton("gene_download_sentences_shown", label = "Download Shown Sentences", class='rightAlign'),
                            DT::dataTableOutput("gene_citations"),
                            helpText(paste("Last updated on",modifiedDate)),
@@ -87,6 +88,7 @@ ui <- function(req) {
                            
                            HTML(citationTableExplanation),
                            downloadButton("cancer_download_sentences_all", label = "Download All Sentences", class='rightAlign'),
+                           downloadButton("cancer_download_sentences_above", label = "Download Sentences for this Cancer", class='rightAlign'),
                            downloadButton("cancer_download_sentences_shown", label = "Download Shown Sentences", class='rightAlign'),
                            DT::dataTableOutput("cancer_citations"),
                            helpText(paste("Last updated on",modifiedDate)),
@@ -122,7 +124,7 @@ server <- function(input, output, session) {
                   selection = 'single',
                   rownames = FALSE,
                   colnames=c('Role','Gene', 'Cancer', 'Citation #'),
-                  options = list(lengthMenu = c(5, 30, 50), pageLength = 20))
+                  options = list(pageLength = 20, lengthMenu = c(10, 20, 30)))
   })
   
   geneTableProxy = dataTableProxy('gene_table')
@@ -202,7 +204,7 @@ server <- function(input, output, session) {
                   rownames = FALSE,
                   colnames=c('PMID','Journal','Year', 'Section', 'Subsection', 'Sentence'),
                   escape = FALSE,
-                  options = list(pageLength = 20))
+                  options = list(pageLength = 20, lengthMenu = c(10, 20, 30)))
   })
   
   
@@ -233,6 +235,18 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       write.table(sentences, file, row.names = FALSE, sep='\t', quote=F)
+    }
+  )
+  
+  output$gene_download_sentences_above <- downloadHandler(
+    filename = function() {
+      return("cancermine_sentences_gene.tsv")
+    },
+    content = function(file) {
+      table <- geneData()
+      entries <- sentences[sentences$matching_id %in% table$matching_id,]
+      
+      write.table(entries, file, row.names = FALSE, sep='\t', quote=F)
     }
   )
   
@@ -284,7 +298,7 @@ server <- function(input, output, session) {
                   selection = 'single',
                   rownames = FALSE,
                   colnames=c('Role','Gene', 'Cancer', 'Citation #'),
-                  options = list(lengthMenu = c(5, 30, 50), pageLength = 20))
+                  options = list(pageLength = 20, lengthMenu = c(10, 20, 30)))
   })
   
   cancerTableProxy = dataTableProxy('cancer_table')
@@ -365,7 +379,7 @@ server <- function(input, output, session) {
                   rownames = FALSE,
                   colnames=c('PMID','Journal','Year', 'Section', 'Subsection', 'Sentence'),
                   escape = FALSE,
-                  options = list(pageLength = 20))
+                  options = list(pageLength = 20, lengthMenu = c(10, 20, 30)))
   })
   
   
@@ -397,6 +411,18 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       write.table(sentences, file, row.names = FALSE, sep='\t', quote=F)
+    }
+  )
+  
+  output$cancer_download_sentences_above <- downloadHandler(
+    filename = function() {
+      return("cancermine_sentences_cancer.tsv")
+    },
+    content = function(file) {
+      table <- cancerData()
+      entries <- sentences[sentences$matching_id==table$matching_id,]
+      
+      write.table(entries, file, row.names = FALSE, sep='\t', quote=F)
     }
   )
   
