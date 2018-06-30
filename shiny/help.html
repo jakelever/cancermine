@@ -1,3 +1,4 @@
+
 <h3>Usage</h3>
 
 Some basic tips on how to use CancerMine
@@ -6,13 +7,13 @@ Some basic tips on how to use CancerMine
 	<li>You can search by gene or cancer type using the tabs at the top and the dropdown box on the left. Type in part of the gene or cancer type and it will give auto-completion suggestions.</li>
 	<li>You can then click on a row in the table or segment in the bar-chart to bring up the associated citations in the table at the bottom. This table includes the PubMed ID with link, journal information, section within publication (title/abstract/article) and the actual sentence</li>
 	<li>The gene names are from <a href="https://www.genenames.org/">HUGO</a> and the cancer types are from the <a href="http://www.disease-ontology.org/">Disease Ontology</a></li>
-	<li>The system tries to normalize gene/cancer names to those ontologies (e.g. HER2 -> ERBB2 and ESCC -> esophagus squamous cell carcinoma).</li>
-	<li>Sometimes it can't find one specific case so it lists all the possibilities separated by a semi-colon. So p75 gets mapped to "CUX1;HCLS1;PSIP1;SIGLEC7;TNFRSF1B" as it is very ambiguous.</li>
-	<li>It also tries to detect possible fusions or combinations. These are separated by the pipe '|'. So you may see 'BCR|ABL1'</li>
+	<li>The system tries to normalize gene/cancer names to those ontologies (e.g. HER2 -&gt; ERBB2 and ESCC -&gt; esophagus squamous cell carcinoma).</li>
 	<li>The system tries to understand the meaning of the sentence. We've dialed up the precision so it should make as few false positives as possible, but there will be a few mistakes.</li>
 	<li>It will be updated once a month (roughly on the 1st) with the latest publications</li>
-	<li>If you want this data in TSV form, it can be accessed at: <a href="http://bionlp.bcgsc.ca/data">http://bionlp.bcgsc.ca/data</a>. It's a TSV file with headers.</li>
+	<li>You can download the entire dataset or subsets using the Download buttons. You can also download the underlying data at <a href="https://doi.org/10.5281/zenodo.1156241">Zenodo</a>.</li>
+	<li>The underlying code is available at <a href="https://github.com/jakelever/cancermine">Github</a> with explanations of the associated data.</li>
 </ul>
+
 
 <h3>FAQs</h3>
 
@@ -62,19 +63,31 @@ Some basic tips on how to use CancerMine
 	<b>Q: Could this approach be used to extract other types of biomedical knowledge?</b>
 </p>
 <p>
-	A: It probably could. If you'd like to talk, please get in contact with <a href="mailto:jlever@bcgsc.ca">Jake Lever</a>.
+	A: It probably could. If you'd like to talk, please get in contact with the main researcher, Jake Lever, by creating a <a href="https://github.com/jakelever/cancermine/issues">Github issue</a>. Also check out the code at the <a href="https://github.com/jakelever/cancermine">Github repository</a> to find out more about the project.
 </p>
 
 <p>
 	<b>Q: Where can I get the raw data to use?</b>
 </p>
 <p>
-	A: The data can be downloaded <a href="../data">here</a>. It is in TSV format with headers. It is licensed under <a href="https://creativecommons.org/share-your-work/public-domain/cc0/">CC0</a>. Once the paper is finalised, we'd appreciate if you would cite it if you use this data.
+	A: The data can be downloaded by clicking on the Download buttons in the app. The complete set is accessible through <a href="https://doi.org/10.5281/zenodo.1156241">Zenodo</a>. It is in TSV format with headers. It is licensed under <a href="https://creativecommons.org/share-your-work/public-domain/cc0/">CC0</a>. Once the paper is finalised, we'd appreciate if you would cite it if you use this data.
 </p>
 
+<p>
+	<b>Q: Where can I find the code used to construct this knowledgebase?</b>
+</p>
+<p>
+	A: All the code is available in our <a href="https://github.com/jakelever/cancermine">Github repository</a>. The project uses various Python libraries for the text mining (e.g. <a href="https://github.com/jakelever/kindred">Kindred</a> and <a href="https://github.com/jakelever/pubrunner">PubRunner</a>). The viewer is built using <a href="https://shiny.rstudio.com/">Shiny</a>. The code is also in the <a href="https://github.com/jakelever/cancermine">repository</a>.
+</p>
 <p>
 	<b>Q: How can I cite this work?</b>
 </p>
 <p>
 	A: There is currently a paper in preparation.
+</p>
+<p>
+	<b>Q: Where can I ask a question?</b>
+</p>
+<p>
+	A: Please <a href="https://github.com/jakelever/cancermine/issues">create an issue</a> on the CancerMine Github repo.
 </p>
