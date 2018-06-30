@@ -52,7 +52,8 @@ ui <- function(req) {
     ),
     titlePanel("",windowTitle="CancerMine"),
     helpText(includeHTML("subheader.html")),
-    tabsetPanel(type = "tabs",
+    tabsetPanel(id="maintabs",
+                type = "tabs",
                 tabPanel("By Gene", 
                          sidebarPanel(
                            selectizeInput("gene_input", "Gene", geneNames, selected = 'EGFR', multiple = FALSE, options = list(maxOptions = 2*length(geneNames))),
@@ -105,6 +106,20 @@ ui <- function(req) {
 input <- data.frame(gene_input='EGFR', cancer_input='prostate cancer', stringsAsFactors=FALSE)
 
 server <- function(input, output, session) {
+  observe({
+    query <- parseQueryString(session$clientData$url_search)
+    if (!is.null(query[['gene']])) {
+      selected <- query[['gene']]
+      updateSelectizeInput(session, "gene_input", selected = selected)
+      updateTabsetPanel(session, 'maintabs', selected = "By Gene")
+    }
+    if (!is.null(query[['cancer']])) {
+      selected <- query[['cancer']]
+      updateSelectizeInput(session, "cancer_input", selected = selected)
+      updateTabsetPanel(session, 'maintabs', selected = "By Cancer")
+    }
+  })
+  
   geneData <- reactive({
     table <- collated[collated$gene_normalized==input$gene_input,]
     if (nrow(table)>0) {
