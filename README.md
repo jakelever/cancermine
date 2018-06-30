@@ -16,7 +16,7 @@ The CancerMine resource is a text-mined knowledgebase of drivers, oncogenes and 
 
 ## Using CancerMine
 
-CancerMine is an automatically updated dataset. You can navigate the data using the [web viewer](http://bionlp.bcgsc.ca/cancermine/) or you can download the latest data from [Zenodo](https://doi.org/10.5281/zenodo.1156241) (or through the web viewer). You likely would not have to run any of the code in this repository.
+CancerMine is an automatically updated dataset. You can navigate the data using the [web viewer](http://bionlp.bcgsc.ca/cancermine/) or you can download the latest data from [Zenodo](https://doi.org/10.5281/zenodo.1156241) (or through the [web viewer](http://bionlp.bcgsc.ca/cancermine/)). You likely would not have to run any of the code in this repository.
 
 ## Installing and Running The Code
 
