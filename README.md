@@ -5,7 +5,10 @@
    <img src="https://travis-ci.org/jakelever/cancermine.svg?branch=master" />
 </a>
 <a href="http://bionlp.bcgsc.ca/cancermine/">
-   <img src="https://img.shields.io/badge/data-viewer-blue.svg" />
+   <img src="https://img.shields.io/badge/data-viewer-9e42f4.svg" />
+</a>
+<a href="https://doi.org/10.5281/zenodo.1156241">
+   <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.1156241.svg" />
 </a>
 </p>
 
@@ -13,7 +16,7 @@ The CancerMine resource is a text-mined knowledgebase of drivers, oncogenes and 
 
 ## Using CancerMine
 
-CancerMine is an automatically updated dataset. You can navigate the data using the [web viewer](http://bionlp.bcgsc.ca/cancermine/) or you can download the data from here (or through the web viewer). You likely would not have to run any of the code in this repository.
+CancerMine is an automatically updated dataset. You can navigate the data using the [web viewer](http://bionlp.bcgsc.ca/cancermine/) or you can download the latest data from [Zenodo](https://doi.org/10.5281/zenodo.1156241) (or through the [web viewer](http://bionlp.bcgsc.ca/cancermine/)). You likely would not have to run any of the code in this repository.
 
 ## Installing and Running The Code
 
@@ -51,7 +54,7 @@ The training data used to build the machine learning models can be found at [dat
 
 ## Outputs
 
-There are three final results files from CancerMine. These are hosted on Zenodo and can also be downloaded through the web viewer. Each file is a tab-delimited file with a header, no comments and no quoting.
+There are three final results files from CancerMine. These are hosted on [Zenodo](https://doi.org/10.5281/zenodo.1156241) and can also be downloaded through the web viewer. Each file is a tab-delimited file with a header, no comments and no quoting.
 
 You likely want **cancermine\_collated.tsv** if you just want the list of cancer gene roles. If you want the supporting sentences, look at **cancermine\_sentences.tsv**. You can use the *matching\_id* column to connect the two files. If you want to dig further and are okay with a higher false positive rate, look at **cancermine\_unfiltered.tsv**.
 
