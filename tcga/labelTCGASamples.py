@@ -4,11 +4,15 @@ import sys
 import random
 import pronto
 import math
+import os
+
+def scoreIt(sampleGenes,fingerprint,allGenes):
+	return sum( fingerprint[g] for g in sampleGenes )
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser()
+	parser = argparse.ArgumentParser(description='Builds CancerMine profiles and runs them against TCGA sample data')
 	parser.add_argument('--inCancermine',required=True,type=str,help='Cancermine TSV to calculate inference scores for')
-	parser.add_argument('--tcgaData',required=True,type=str,help='TCGA data fun')
+	parser.add_argument('--outFile',required=True,type=str,help='Output file for analysis')
 	args = parser.parse_args()
 
 	cancerGeneCitations = defaultdict(lambda : defaultdict(set))
@@ -42,7 +46,7 @@ if __name__ == '__main__':
 
 			cancerCounts[cancer_name] += 1
 
-	samples = defaultdict(set)
+
 
 	cancerGeneLists = {}
 	for cancer_name,geneNameWithCitations in cancerGeneCitations.items():
@@ -54,32 +58,55 @@ if __name__ == '__main__':
 		gene_names_defaultDict.update(gene_names)
 		cancerGeneLists[cancer_name] = gene_names_defaultDict
 
-	with open(args.tcgaData) as f:
-		for line in f:
-			gene,sample = line.strip('\n').split('\t')
-
-			samples[sample].add(gene)
-			genes.add(gene)
-
 	cancerFilter = ['colorectal cancer','breast cancer','hepatocellular carcinoma','prostate cancer','lung cancer','malignant glioma','stomach cancer']
+	tcgaProjects = ['COAD','BRCA','LIHC','PRAD','LUAD','LGG','STAD']
 	cancerGeneLists = { cancer:geneList for cancer,geneList in cancerGeneLists.items() if cancer in cancerFilter }
 
-	def scoreIt(sampleGenes,fingerprint,allGenes):
-		return sum( fingerprint[g] for g in sampleGenes )
+	output = defaultdict(Counter)
+	for tcgaProject in tcgaProjects:
+		damagingVariantsFile = os.path.join(tcgaProject,'damagingVariants')
+		assert os.path.isfile(damagingVariantsFile), "Couldn't find %s file" % damagingVariants
 
-	for sampleID in samples:
-		scores = [ (scoreIt(samples[sampleID],cancerGeneList,genes),cancerType) for cancerType,cancerGeneList in cancerGeneLists.items() ]
-		scores = sorted(scores,reverse=True)
+		print("Loading %s" % damagingVariantsFile)
 
-		if scores[0][0] == 0:
-			score,bestCancerType = -1,"X no TS"
-		elif scores[0][0] > scores[1][0]:
-			score,bestCancerType = scores[0]
-		else:
-			score,bestCancerType = -1,"unclear"
+		samples = defaultdict(set)
+		with open(damagingVariantsFile) as f:
+			for line in f:
+				gene,sample = line.strip('\n').split('\t')
 
-		print("%s\t%s\t%f" % (sampleID,bestCancerType,score))
+				samples[sample].add(gene)
+				genes.add(gene)
 
-		sys.stdout.flush()
+		for sampleID in samples:
+			scores = [ (scoreIt(samples[sampleID],cancerGeneList,genes),cancerType) for cancerType,cancerGeneList in cancerGeneLists.items() ]
+			scores = sorted(scores,reverse=True)
+
+			if scores[0][0] == 0:
+				score,bestCancerType = -1,"none"
+			elif scores[0][0] > scores[1][0]:
+				score,bestCancerType = scores[0]
+			else:
+				score,bestCancerType = -1,"none"
+
+			#print("%s\t%s\t%f" % (sampleID,bestCancerType,score))
+			output[tcgaProject][bestCancerType] += 1
+
+			sys.stdout.flush()
+
+	with open(args.outFile,'w') as f:
+		headers = ['profile'] + tcgaProjects
+		f.write("\t".join(headers) + "\n")
+
+		for profile in cancerFilter + ['none']:
+			total = sum( [ output[t][profile] for t in tcgaProjects ] )
+			f.write(profile)
+			for tcgaProject in tcgaProjects:
+				count = output[tcgaProject][profile]
+				perc = 100 * count / total
+				#f.write("\t%d" % count)
+				f.write("\t%.1f" % perc)
+			f.write("\n")
+
+
 
 
