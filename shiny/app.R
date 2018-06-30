@@ -420,7 +420,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       table <- cancerData()
-      entries <- sentences[sentences$matching_id==table$matching_id,]
+      entries <- sentences[sentences$matching_id %in% table$matching_id,]
       
       write.table(entries, file, row.names = FALSE, sep='\t', quote=F)
     }
