@@ -53,13 +53,13 @@ The training data used to build the machine learning models can be found at [dat
 
 There are three final results files from CancerMine. These are hosted on Zenodo and can also be downloaded through the web viewer. Each file is a tab-delimited file with a header, no comments and no quoting.
 
-You likely want **cancermine_collated.tsv** if you just want the list of cancer gene roles. If you want the supporting sentences, look at **cancermine_sentences.tsv**. You can use the *matching_id* column to connect the two files. If you want to dig further and are okay with a higher false positive rate, look at **cancermine_unfiltered.tsv**.
+You likely want **cancermine\_collated.tsv** if you just want the list of cancer gene roles. If you want the supporting sentences, look at **cancermine\_sentences.tsv**. You can use the *matching\_id* column to connect the two files. If you want to dig further and are okay with a higher false positive rate, look at **cancermine\_unfiltered.tsv**.
 
-**cancermine_collated.tsv:** This contains the cancer gene roles with citation counts supporting them. It contains the normalized cancer and gene names along with IDs for HUGO, Entrez Gene and the Disease Ontology.
+**cancermine\_collated.tsv:** This contains the cancer gene roles with citation counts supporting them. It contains the normalized cancer and gene names along with IDs for HUGO, Entrez Gene and the Disease Ontology.
 
-**cancermine_sentences.tsv:** This contains the supporting sentences for the cancer gene roles in the collated file. Each row is a single supporting sentence for one cancer gene role. This file contains information on the source publication (e.g. journal, publication date, etc), the actual sentence and the cancer gene role extracted.
+**cancermine\_sentences.tsv:** This contains the supporting sentences for the cancer gene roles in the collated file. Each row is a single supporting sentence for one cancer gene role. This file contains information on the source publication (e.g. journal, publication date, etc), the actual sentence and the cancer gene role extracted.
 
-**cancermine_unfiltered.tsv:** This is the raw output of the applyModelsToSentences.py script across all of PubMed, Pubmed Central Open Access and PubMed Central Author Manuscript Collection. It contains every predicted relation with a prediction score above 0.5. So this may contain many false positives. Each row contain information on the publication (e.g. journal, publication date, etc) along with the sentence and the specific cancer gene role extracted (with HUGO, Entrez Gene and Disease Ontology IDs). This file is further processed to create the other two.
+**cancermine\_unfiltered.tsv:** This is the raw output of the applyModelsToSentences.py script across all of PubMed, Pubmed Central Open Access and PubMed Central Author Manuscript Collection. It contains every predicted relation with a prediction score above 0.5. So this may contain many false positives. Each row contain information on the publication (e.g. journal, publication date, etc) along with the sentence and the specific cancer gene role extracted (with HUGO, Entrez Gene and Disease Ontology IDs). This file is further processed to create the other two.
 
 ## Shiny App
 
