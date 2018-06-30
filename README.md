@@ -5,7 +5,7 @@
    <img src="https://travis-ci.org/jakelever/cancermine.svg?branch=master" />
 </a>
 <a href="http://bionlp.bcgsc.ca/cancermine/">
-   <img src="https://img.shields.io/badge/data-viewer-blue.svg" />
+   <img src="https://img.shields.io/badge/data-viewer-9e42f4.svg" />
 </a>
 <a href="https://doi.org/10.5281/zenodo.1156241">
    <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.1156241.svg" />
