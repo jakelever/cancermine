@@ -42,18 +42,59 @@ color_Driver <- colors[1]
 color_TumorSuppressor <- colors[2]
 color_Oncogene <- colors[3]
 
-citationTableExplanation <- "<br /><br /><br /><b>Citation Table:</b><br />Select row in table above to see associated citations and sentences<br /><br />"
+citationTableExplanation <- "<br /><br /><br /><b><a name='citationtable'>Citation Table:</a></b><br />Select row in table above to see associated citations and sentences<br /><br />"
+
+#################################
+# Aggregate data for pie charts #
+#################################
+
+cancerpiecounts <- aggregate(collated$citation_count,by=list(collated$cancer_normalized),FUN=sum)
+colnames(cancerpiecounts) <- c('label','total_citation_count')
+cancerpiecounts <- cancerpiecounts[order(cancerpiecounts$total_citation_count,decreasing=T),]
+
+total <- sum(cancerpiecounts$total_citation_count)
+cutoff <- (0.9/100.0) * total
+cancerpiecounts$label <- as.character(cancerpiecounts$label)
+cancerpiecounts[cancerpiecounts$total_citation_count<cutoff,'label'] <- 'other'
+cancerpiecounts$label <- factor(cancerpiecounts$label, levels=c('other',as.character(cancerpiecounts[cancerpiecounts$total_citation_count>=cutoff,'label'])))
+
+cancerpiecounts <- aggregate(cancerpiecounts$total_citation_count,by=list(cancerpiecounts$label),FUN=sum)
+colnames(cancerpiecounts) <- c('label','total_citation_count')
+
+
+genepiecounts <- aggregate(collated$citation_count,by=list(collated$gene_normalized),FUN=sum)
+colnames(genepiecounts) <- c('label','total_citation_count')
+genepiecounts <- genepiecounts[order(genepiecounts$total_citation_count,decreasing=T),]
+
+total <- sum(genepiecounts$total_citation_count)
+cutoff <- (0.9/100.0) * total
+genepiecounts$label <- as.character(genepiecounts$label)
+genepiecounts[genepiecounts$total_citation_count<cutoff,'label'] <- 'other'
+genepiecounts$label <- factor(genepiecounts$label, levels=c('other',as.character(genepiecounts[genepiecounts$total_citation_count>=cutoff,'label'])))
+
+genepiecounts <- aggregate(genepiecounts$total_citation_count,by=list(genepiecounts$label),FUN=sum)
+colnames(genepiecounts) <- c('label','total_citation_count')
+
+
 
 ui <- function(req) {
   fluidPage(
     tags$head(
       includeHTML("google-analytics.js"),
+      includeHTML("metadata.html"),
       tags$style(".rightAlign{float:right; margin-left:5px; margin-bottom: 20px;}")
     ),
     titlePanel("",windowTitle="CancerMine"),
     helpText(includeHTML("subheader.html")),
     tabsetPanel(id="maintabs",
                 type = "tabs",
+                tabPanel("About", 
+                         includeHTML("landing-top.html"),
+                         splitLayout(cellWidths = c("50%", "50%"), 
+                                     plotlyOutput("gene_summary_piechart"),
+                                     plotlyOutput("cancer_summary_piechart")),
+                         includeHTML("landing-bottom.html"),
+                         helpText(includeHTML("cc0.html"))),
                 tabPanel("By Gene", 
                          sidebarPanel(
                            selectizeInput("gene_input", "Gene", geneNames, selected = 'EGFR', multiple = FALSE, options = list(maxOptions = 2*length(geneNames))),
@@ -96,31 +137,56 @@ ui <- function(req) {
                            helpText(includeHTML("cc0.html"))
                          )
                 ),
-                tabPanel("Help", helpText(includeHTML("help.html"))),
-                tabPanel("About", helpText(includeHTML("about.html")))
+                tabPanel("Help", 
+                         includeHTML("help.html"),
+                         helpText(includeHTML("cc0.html")))
     )
     
   )
 }
 
 input <- data.frame(gene_input='EGFR', cancer_input='prostate cancer', stringsAsFactors=FALSE)
+matching_id <- '92aff62f03f4d4025638c3c771e2ab0c'
 
 server <- function(input, output, session) {
   observe({
     query <- parseQueryString(session$clientData$url_search)
     if (!is.null(query[['gene']])) {
-      selected <- query[['gene']]
-      updateSelectizeInput(session, "gene_input", selected = selected)
+      geneName <- query[['gene']]
+      updateSelectizeInput(session, "gene_input", selected = geneName)
       updateTabsetPanel(session, 'maintabs', selected = "By Gene")
     }
     if (!is.null(query[['cancer']])) {
-      selected <- query[['cancer']]
-      updateSelectizeInput(session, "cancer_input", selected = selected)
+      cancerName <- query[['cancer']]
+      updateSelectizeInput(session, "cancer_input", selected = cancerName)
       updateTabsetPanel(session, 'maintabs', selected = "By Cancer")
+    }
+    if (!is.null(query[['matching_id']])) {
+      matching_id <- query[['matching_id']]
+      warning(matching_id)
+      mask <- collated$matching_id==matching_id
+      geneName <- collated$gene_normalized[mask][1]
+      warning(geneName)
+      updateSelectizeInput(session, "gene_input", selected = geneName)
+      updateTabsetPanel(session, 'maintabs', selected = "By Gene")
+      
+      table <- geneData()
+      warning(paste('nrow(table) -',nrow(table)))
+      rowNumber <- rownames(table[table$matching_id==matching_id,])
+      warning(paste('rowNumber -',rowNumber))
+
+      perPage <- input$gene_table_state$length
+      newPageNumber <- floor(rowNumber / perPage) + 1
+      
+      geneTableProxy %>% selectPage(newPageNumber)
+      geneTableProxy %>% selectRows(rowNumber)
+      
+      browseURL("#citationtable")
     }
   })
   
   geneData <- reactive({
+    #warning(paste('geneData -',input$gene_input))
     table <- collated[collated$gene_normalized==input$gene_input,]
     if (nrow(table)>0) {
       ordering <- aggregate(table$citation_count,by=list(table$cancer_normalized),FUN=sum)
@@ -139,7 +205,7 @@ server <- function(input, output, session) {
                   selection = 'single',
                   rownames = FALSE,
                   colnames=c('Role','Gene', 'Cancer', 'Citation #'),
-                  options = list(pageLength = 20, lengthMenu = c(10, 20, 30)))
+                  options = list(pageLength = 20, lengthMenu = c(10, 20, 30), stateSave = TRUE))
   })
   
   geneTableProxy = dataTableProxy('gene_table')
@@ -200,8 +266,19 @@ server <- function(input, output, session) {
     if (length(s) > 0) {
       table <- geneData()
       roleOptions <- c('Tumor_Suppressor','Oncogene','Driver')
-      rowNumber <- rownames(table[table$cancer_normalized==s$x & table$role==roleOptions[s$curveNumber+1],])
-      geneTableProxy %>% selectRows(as.numeric(rowNumber))
+      rowNumber <- as.integer(rownames(table[table$cancer_normalized==s$x & table$role==roleOptions[s$curveNumber+1],]))
+
+      currentPageNumber <- as.integer(input$gene_table_state$start / input$gene_table_state$length) + 1
+      currentlySelectedRow <- input$gene_table_rows_selected
+      
+      perPage <- input$gene_table_state$length
+      newPageNumber <- floor(rowNumber / perPage) + 1
+      
+      if (newPageNumber != currentPageNumber)
+        geneTableProxy %>% selectPage(newPageNumber)
+      
+      if (length(currentlySelectedRow) == 0 || rowNumber != currentlySelectedRow)
+        geneTableProxy %>% selectRows(rowNumber)
     }
   })
   
@@ -284,6 +361,33 @@ server <- function(input, output, session) {
   )
   
   
+  gene_event_val <- reactiveValues(count = 0)
+  output$gene_summary_piechart <- renderPlotly({
+    sourceName <- paste('gene_summary_piechart_',gene_event_val$count,sep='')
+    p <- plot_ly(genepiecounts, labels = ~label, values = ~total_citation_count, type = 'pie', sort=FALSE, textinfo = 'label', textposition = 'inside', insidetextfont = list(color = '#FFFFFF'),source=sourceName) %>%
+      layout(title = paste('Genes'),
+             xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+             yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))%>% 
+      config(displayModeBar = F)
+    
+    p$elementId <- NULL
+    p
+  })
+  
+  observe({
+    sourceName <- paste('gene_summary_piechart_',gene_event_val$count,sep='')
+    d <- event_data("plotly_click",source=sourceName)
+    if (length(d) > 0)
+    {
+      selected <- genepiecounts[d$pointNumber+1,'label']
+      if (!is.na(selected) && selected != 'other') {
+        updateSelectizeInput(session, "gene_input", selected = selected)
+        updateTabsetPanel(session, 'maintabs', selected = "By Gene")
+        
+        gene_event_val$count <- gene_event_val$count + 1
+      }
+    }
+  })
   
   
   
@@ -313,7 +417,7 @@ server <- function(input, output, session) {
                   selection = 'single',
                   rownames = FALSE,
                   colnames=c('Role','Gene', 'Cancer', 'Citation #'),
-                  options = list(pageLength = 20, lengthMenu = c(10, 20, 30)))
+                  options = list(pageLength = 20, lengthMenu = c(10, 20, 30), stateSave=TRUE))
   })
   
   cancerTableProxy = dataTableProxy('cancer_table')
@@ -374,8 +478,19 @@ server <- function(input, output, session) {
     if (length(s) > 0) {
       table <- cancerData()
       roleOptions <- c('Tumor_Suppressor','Oncogene','Driver')
-      rowNumber <- rownames(table[table$gene_normalized==s$x & table$role==roleOptions[s$curveNumber+1],])
-      cancerTableProxy %>% selectRows(as.numeric(rowNumber))
+      rowNumber <- as.integer(rownames(table[table$gene_normalized==s$x & table$role==roleOptions[s$curveNumber+1],]))
+      
+      currentPageNumber <- as.integer(input$cancer_table_state$start / input$cancer_table_state$length) + 1
+      currentlySelectedRow <- input$cancer_table_rows_selected
+      
+      perPage <- input$cancer_table_state$length
+      newPageNumber <- floor(rowNumber / perPage) + 1
+      
+      if (newPageNumber != currentPageNumber)
+        cancerTableProxy %>% selectPage(newPageNumber)
+      
+      if (length(currentlySelectedRow) == 0 || rowNumber != currentlySelectedRow)
+        cancerTableProxy %>% selectRows(rowNumber)
     }
   })
   
@@ -395,6 +510,34 @@ server <- function(input, output, session) {
                   colnames=c('PMID','Journal','Year', 'Section', 'Subsection', 'Sentence'),
                   escape = FALSE,
                   options = list(pageLength = 20, lengthMenu = c(10, 20, 30)))
+  })
+  
+  cancer_event_val <- reactiveValues(count = 0)
+  output$cancer_summary_piechart <- renderPlotly({
+    sourceName <- paste('cancer_summary_piechart_',cancer_event_val$count,sep='')
+    p <- plot_ly(cancerpiecounts, labels = ~label, values = ~total_citation_count, type = 'pie', sort=FALSE, textinfo = 'label', textposition = 'inside', insidetextfont = list(color = '#FFFFFF'),source=sourceName) %>%
+      layout(title = paste('Cancers'),
+             xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+             yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))%>% 
+      config(displayModeBar = F)
+    
+    p$elementId <- NULL
+    p
+  })
+  
+  observe({
+    sourceName <- paste('cancer_summary_piechart_',cancer_event_val$count,sep='')
+    d <- event_data("plotly_click",source=sourceName)
+    if (length(d) > 0)
+    {
+      selected <- cancerpiecounts[d$pointNumber+1,'label']
+      if (!is.na(selected) && selected != 'other') {
+        updateSelectizeInput(session, "cancer_input", selected = selected)
+        updateTabsetPanel(session, 'maintabs', selected = "By Cancer")
+        
+        cancer_event_val$count <- cancer_event_val$count + 1
+      }
+    }
   })
   
   
