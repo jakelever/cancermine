@@ -10,6 +10,9 @@
 <a href="https://doi.org/10.5281/zenodo.1156241">
    <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.1156241.svg" />
 </a>
+<a href="https://doi.org/10.1101/364406">
+   <img src="https://img.shields.io/badge/bioRxiv-preprint-67baea.svg" />
+</a>
 </p>
 
 The CancerMine resource is a text-mined knowledgebase of drivers, oncogenes and tumor suppressors in cancer. Abstracts from PubMed and full-text articles from PubMed Central Open Access subset and Author Manuscript Collections are processed to find references to genes as drivers, oncogenes and tumor suppressors in different cancer types.
@@ -74,7 +77,18 @@ The code to generate all the figures and text for the paper can be found in [pap
 
 ## Citing Us
 
-A paper is in preparation.
+The paper is now up at [bioRxiv](https://doi.org/10.1101/364406). It will be submitted to a journal in due course. It'd be wonderful if you would cite the paper if you use the methods or data set.
+
+```
+@article{lever2018cancermine,
+  title={CancerMine: A literature-mined resource for drivers, oncogenes and tumor suppressors in cancer},
+  author={Lever, Jake and Zhao, Eric Y and Grewal, Jasleen and Jones, Martin R and Jones, Steven JM},
+  journal={bioRxiv},
+  pages={364406},
+  year={2018},
+  publisher={Cold Spring Harbor Laboratory}
+}
+```
 
 ## Issues
 
