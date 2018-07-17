@@ -118,7 +118,7 @@ ui <- function(req) {
                 ),
                 tabPanel("By Cancer", 
                          sidebarPanel(
-                           selectizeInput("cancer_input", "Cancer", cancerNames, selected = 'colorectal cancer', multiple = FALSE, options = list(maxOptions = 2*length(cancerNames))),
+                           selectizeInput("cancer_input", "Cancer", cancerNames, selected = 'acute T cell leukemia', multiple = FALSE, options = list(maxOptions = 2*length(cancerNames))),
                            plotlyOutput("cancer_overview"),
                            width=3
                          ),
@@ -149,53 +149,58 @@ input <- data.frame(gene_input='EGFR', cancer_input='prostate cancer', stringsAs
 matching_id <- '92aff62f03f4d4025638c3c771e2ab0c'
 
 server <- function(input, output, session) {
+  
+  geneTableProxy = dataTableProxy('gene_table')
+  
+  url_event_val <- reactiveValues(count = 0)
   observe({
-    query <- parseQueryString(session$clientData$url_search)
-    if (!is.null(query[['gene']])) {
-      geneName <- query[['gene']]
-      updateSelectizeInput(session, "gene_input", selected = geneName)
-      updateTabsetPanel(session, 'maintabs', selected = "By Gene")
-    }
-    if (!is.null(query[['cancer']])) {
-      cancerName <- query[['cancer']]
-      updateSelectizeInput(session, "cancer_input", selected = cancerName)
-      updateTabsetPanel(session, 'maintabs', selected = "By Cancer")
-    }
-    if (!is.null(query[['matching_id']])) {
-      matching_id <- query[['matching_id']]
-      warning(matching_id)
-      mask <- collated$matching_id==matching_id
-      geneName <- collated$gene_normalized[mask][1]
-      warning(geneName)
-      updateSelectizeInput(session, "gene_input", selected = geneName)
-      updateTabsetPanel(session, 'maintabs', selected = "By Gene")
+    if (url_event_val$count == 0) {
       
-      table <- geneData()
-      warning(paste('nrow(table) -',nrow(table)))
-      rowNumber <- rownames(table[table$matching_id==matching_id,])
-      warning(paste('rowNumber -',rowNumber))
-
-      perPage <- input$gene_table_state$length
-      newPageNumber <- floor(rowNumber / perPage) + 1
-      
-      geneTableProxy %>% selectPage(newPageNumber)
-      geneTableProxy %>% selectRows(rowNumber)
-      
-      browseURL("#citationtable")
+      query <- parseQueryString(session$clientData$url_search)
+      if (!is.null(query[['gene']])) {
+        geneName <- query[['gene']]
+        updateSelectizeInput(session, "gene_input", selected = geneName)
+        updateTabsetPanel(session, 'maintabs', selected = "By Gene")
+        url_event_val$count <- 1
+      }
+      if (!is.null(query[['cancer']])) {
+        cancerName <- query[['cancer']]
+        updateSelectizeInput(session, "cancer_input", selected = cancerName)
+        updateTabsetPanel(session, 'maintabs', selected = "By Cancer")
+        url_event_val$count <- 1
+      }
+      if (!is.null(query[['matching_id']])) {
+        matching_id <- query[['matching_id']]
+        warning(matching_id)
+        mask <- collated$matching_id==matching_id
+        geneName <- collated$gene_normalized[mask][1]
+        warning(geneName)
+        updateSelectizeInput(session, "gene_input", selected = geneName)
+        updateTabsetPanel(session, 'maintabs', selected = "By Gene")
+        
+        table <- geneData()
+        warning(paste('nrow(table) -',nrow(table)))
+        rowNumber <- which(table$matching_id==matching_id)
+        warning(paste('rowNumber -',rowNumber))
+        
+        currentPageNumber <- as.integer(input$gene_table_state$start / input$gene_table_state$length) + 1
+        currentlySelectedRow <- input$gene_table_rows_selected
+        
+        perPage <- input$gene_table_state$length
+        newPageNumber <- floor(rowNumber / perPage) + 1
+        
+        geneTableProxy %>% selectPage(newPageNumber)
+        geneTableProxy %>% selectRows(rowNumber)
+        
+        #browseURL("#citationtable")
+        if (newPageNumber == currentPageNumber && length(currentlySelectedRow) > 0 && rowNumber == currentlySelectedRow)
+          url_event_val$count <- 1
+      }
     }
   })
   
   geneData <- reactive({
-    #warning(paste('geneData -',input$gene_input))
     table <- collated[collated$gene_normalized==input$gene_input,]
-    if (nrow(table)>0) {
-      ordering <- aggregate(table$citation_count,by=list(table$cancer_normalized),FUN=sum)
-      colnames(ordering) <- c('cancer_normalized','citation_count_for_cancer')
-      table <- dplyr::inner_join(table,ordering,by='cancer_normalized')
-      table <- table[order(table$citation_count_for_cancer,decreasing=TRUE),]
-      table <- table[,colnames(table) != 'citation_count_for_cancer']
-      rownames(table) <- 1:nrow(table)
-    }
     table
   })
   
@@ -207,8 +212,6 @@ server <- function(input, output, session) {
                   colnames=c('Role','Gene', 'Cancer', 'Citation #'),
                   options = list(pageLength = 20, lengthMenu = c(10, 20, 30), stateSave = TRUE))
   })
-  
-  geneTableProxy = dataTableProxy('gene_table')
   
   
   output$gene_overview <- renderPlotly({
@@ -238,8 +241,10 @@ server <- function(input, output, session) {
     p
   })
   
+  gene_bar_event_val <- reactiveValues(count = 0)
   output$gene_barchart <- renderPlotly({
     table <- geneData()
+    sourceName <- paste('gene_barchart_',gene_bar_event_val$count,sep='')
     if (nrow(table) > 0) {
       unmelted <- dcast(table, cancer_normalized~role, sum, drop=F, value.var="citation_count")
       unmelted$total <- unmelted$Driver + unmelted$Oncogene + unmelted$Tumor_Suppressor
@@ -247,7 +252,7 @@ server <- function(input, output, session) {
       unmelted <- unmelted[order(unmelted$total,decreasing=T),]
       unmelted$cancer_normalized <- factor(as.character(unmelted$cancer_normalized), unique(unmelted$cancer_normalized))
       
-      p <- plot_ly(unmelted, x=~cancer_normalized, y=~Tumor_Suppressor, source='gene_barchart', type = 'bar', name = 'Tumor Suppressor', marker=list(color=color_TumorSuppressor)) %>%
+      p <- plot_ly(unmelted, x=~cancer_normalized, y=~Tumor_Suppressor, source=sourceName, type = 'bar', name = 'Tumor Suppressor', marker=list(color=color_TumorSuppressor)) %>%
         add_trace(y = ~Oncogene, name = 'Oncogene', marker=list(color=color_Oncogene)) %>%
         add_trace(y = ~Driver, name = 'Driver', marker=list(color=color_Driver))%>%
         layout(yaxis = list(title = 'Count'), barmode = 'stack', margin = list(b = 200), xaxis=list(title = "", tickangle = 45))%>% 
@@ -262,12 +267,13 @@ server <- function(input, output, session) {
   })
   
   observe({
-    s <- event_data("plotly_click", source = "gene_barchart")
+    sourceName <- paste('gene_barchart_',gene_bar_event_val$count,sep='')
+    s <- event_data("plotly_click", source = sourceName)
     if (length(s) > 0) {
       table <- geneData()
       roleOptions <- c('Tumor_Suppressor','Oncogene','Driver')
-      rowNumber <- as.integer(rownames(table[table$cancer_normalized==s$x & table$role==roleOptions[s$curveNumber+1],]))
-
+      rowNumber <- which(table$cancer_normalized==s$x & table$role==roleOptions[s$curveNumber+1])
+      
       currentPageNumber <- as.integer(input$gene_table_state$start / input$gene_table_state$length) + 1
       currentlySelectedRow <- input$gene_table_rows_selected
       
@@ -279,6 +285,8 @@ server <- function(input, output, session) {
       
       if (length(currentlySelectedRow) == 0 || rowNumber != currentlySelectedRow)
         geneTableProxy %>% selectRows(rowNumber)
+      
+      gene_bar_event_val$count <- gene_bar_event_val$count + 1
     }
   })
   
@@ -400,14 +408,6 @@ server <- function(input, output, session) {
   
   cancerData <- reactive({
     table <- collated[collated$cancer_normalized==input$cancer_input,]
-    if (nrow(table)>0) {
-      ordering <- aggregate(table$citation_count,by=list(table$gene_normalized),FUN=sum)
-      colnames(ordering) <- c('gene_normalized','citation_count_for_gene')
-      table <- dplyr::inner_join(table,ordering,by='gene_normalized')
-      table <- table[order(table$citation_count_for_gene,decreasing=TRUE),]
-      table <- table[,colnames(table) != 'citation_count_for_gene']
-      rownames(table) <- 1:nrow(table)
-    }
     table
   })
   
@@ -450,8 +450,10 @@ server <- function(input, output, session) {
     p
   })
   
+  cancer_bar_event_val <- reactiveValues(count = 0)
   output$cancer_barchart <- renderPlotly({
     table <- cancerData()
+    sourceName <- paste('cancer_barchart_',cancer_bar_event_val$count,sep='')
     if (nrow(table) > 0) {
       unmelted <- dcast(table, gene_normalized~role, sum, drop=F, value.var="citation_count")
       unmelted$total <- unmelted$Driver + unmelted$Oncogene + unmelted$Tumor_Suppressor
@@ -459,7 +461,7 @@ server <- function(input, output, session) {
       unmelted <- unmelted[order(unmelted$total,decreasing=T),]
       unmelted$gene_normalized <- factor(as.character(unmelted$gene_normalized), unique(unmelted$gene_normalized))
       
-      p <- plot_ly(unmelted, x=~gene_normalized, y=~Tumor_Suppressor, source='cancer_barchart', type = 'bar', name = 'Tumor Suppressor', marker=list(color=color_TumorSuppressor)) %>%
+      p <- plot_ly(unmelted, x=~gene_normalized, y=~Tumor_Suppressor, source=sourceName, type = 'bar', name = 'Tumor Suppressor', marker=list(color=color_TumorSuppressor)) %>%
         add_trace(y = ~Oncogene, name = 'Oncogene', marker=list(color=color_Oncogene)) %>%
         add_trace(y = ~Driver, name = 'Driver', marker=list(color=color_Driver))%>%
         layout(yaxis = list(title = 'Count'), barmode = 'stack', margin = list(b = 200), xaxis=list(title = "", tickangle = 45))%>% 
@@ -474,11 +476,12 @@ server <- function(input, output, session) {
   })
   
   observe({
-    s <- event_data("plotly_click", source = "cancer_barchart")
+    sourceName <- paste('cancer_barchart_',cancer_bar_event_val$count,sep='')
+    s <- event_data("plotly_click", source = sourceName)
     if (length(s) > 0) {
       table <- cancerData()
       roleOptions <- c('Tumor_Suppressor','Oncogene','Driver')
-      rowNumber <- as.integer(rownames(table[table$gene_normalized==s$x & table$role==roleOptions[s$curveNumber+1],]))
+      rowNumber <- which(table$gene_normalized==s$x & table$role==roleOptions[s$curveNumber+1])
       
       currentPageNumber <- as.integer(input$cancer_table_state$start / input$cancer_table_state$length) + 1
       currentlySelectedRow <- input$cancer_table_rows_selected
@@ -491,6 +494,8 @@ server <- function(input, output, session) {
       
       if (length(currentlySelectedRow) == 0 || rowNumber != currentlySelectedRow)
         cancerTableProxy %>% selectRows(rowNumber)
+      
+      cancer_bar_event_val$count <- cancer_bar_event_val$count + 1
     }
   })
   
@@ -610,3 +615,4 @@ server <- function(input, output, session) {
 }
 
 shinyApp(ui, server)
+
