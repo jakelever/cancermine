@@ -75,6 +75,15 @@ genepiecounts$label <- factor(genepiecounts$label, levels=c('other',as.character
 genepiecounts <- aggregate(genepiecounts$total_citation_count,by=list(genepiecounts$label),FUN=sum)
 colnames(genepiecounts) <- c('label','total_citation_count')
 
+genesWithCitations <- dcast(collated, gene_normalized~role, sum, drop=F, value.var="citation_count")
+genesWithCitations$total <- genesWithCitations$Driver + genesWithCitations$Oncogene + genesWithCitations$Tumor_Suppressor
+genesWithCitations <- genesWithCitations[genesWithCitations$total>0,]
+genesWithCitations <- genesWithCitations[order(genesWithCitations$total,decreasing=T),]
+genesWithCitations$gene_link <- sprintf("<a href='?gene=%s' target='_blank'>%s</a>",genesWithCitations$gene_normalized,genesWithCitations$gene_normalized)
+genesWithCitations$gene_normalized_lower <- str_to_lower(genesWithCitations$gene_normalized)
+genelist_legend <- '<p></p><div style="display: inline-block; height:20px; width:20px; background-color:#66C2A5">&nbsp;</div> Driver <div style="display: inline-block; height:20px; width:20px; background-color:#8DA0CB">&nbsp;</div> Oncogene <div style="display: inline-block; height:20px; width:20px; background-color:#FC8D62">&nbsp;</div> Tumor Suppressor'
+
+
 
 
 ui <- function(req) {
@@ -137,6 +146,13 @@ ui <- function(req) {
                            helpText(includeHTML("cc0.html"))
                          )
                 ),
+                tabPanel("With Gene List", 
+                         includeHTML("genelist-top.html"),
+                         textAreaInput("genelist_genes", "Genes:", value = "EGFR\nERBB2\nPTEN", height=200),
+                         HTML(genelist_legend),
+                         downloadButton("genelist_download", label = "Download", class='rightAlign'),
+                         DT::dataTableOutput("genelist_resulttable"),
+                         helpText(includeHTML("cc0.html"))),
                 tabPanel("Help", 
                          includeHTML("help.html"),
                          helpText(includeHTML("cc0.html")))
@@ -167,6 +183,10 @@ server <- function(input, output, session) {
         cancerName <- query[['cancer']]
         updateSelectizeInput(session, "cancer_input", selected = cancerName)
         updateTabsetPanel(session, 'maintabs', selected = "By Cancer")
+        url_event_val$count <- 1
+      }
+      if (!is.null(query[['genelist']])) {
+        updateTabsetPanel(session, 'maintabs', selected = "With Gene List")
         url_event_val$count <- 1
       }
       if (!is.null(query[['matching_id']])) {
@@ -608,9 +628,46 @@ server <- function(input, output, session) {
   )
   
   
+  genelistData <- reactive({
+    selectedGenes = strsplit(str_to_lower(input$genelist_genes),'\n')[[1]]
+    data <- genesWithCitations[genesWithCitations$gene_normalized_lower %in% selectedGenes,]
+    data
+  })
   
+  output$genelist_resulttable <- DT::renderDataTable({
+    data <- genelistData()
+
+    maxvalue <- data[1,total]
+    data$Driver_perc <- round(98*data$Driver/maxvalue,1)
+    data$Oncogene_perc <- round(98*data$Oncogene/maxvalue,1)
+    data$Tumor_Suppressor_perc <- round(98*data$Tumor_Suppressor/maxvalue,1)
+    
+    data$citation_bars <- sprintf("<div><div style='height:20px; width:%f%%; background-color: #66C2A5; float:left'>&nbsp;</div><div style='height:20px; width:%f%%; background-color: #8DA0CB; float:left'>&nbsp;</div><div style='height:20px; width:%f%%; background-color: #FC8D62; float:left'>&nbsp;</div></div>",data$Driver_perc, data$Oncogene_perc, data$Tumor_Suppressor_perc)
+
+    DT::datatable(data[,c('gene_link','citation_bars','total')],
+                  colnames=c('Gene','Roles','Total Citations'),
+                  selection = 'none',
+                  rownames = FALSE,
+                  escape = FALSE,
+                  options = list(paging=F,
+                                 ordering=F,
+                                 columnDefs = list(list(width = '80%', targets = c(1))),
+                                 searching=F))
+  })
   
-  
+  output$genelist_download <- downloadHandler(
+    filename = function() {
+      return("cancermine_genelist_results.tsv")
+    },
+    content = function(file) {
+      data <- genelistData()
+      selectedColumns <- c('gene_normalized','Driver','Oncogene','Tumor_Suppressor','total')
+      data <- data[,selectedColumns,with=F]
+      colnames(data) <- c('gene','driver_citations','oncogene_citations','tumor_suppressor_citations','all_citations')
+      
+      write.table(data, file, row.names = FALSE, sep='\t', quote=F)
+    }
+  )
   
 }
 
