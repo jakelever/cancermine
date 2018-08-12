@@ -1,6 +1,7 @@
 name: CancerMine
 version: 0.1
 url: https://github.com/jakelever/cancermine
+zenodo: 1156241
 resources:
    full:
       - BIOWORDLISTS
