@@ -8,4 +8,5 @@ install:
   - pip install -e kindred
   - python -m spacy download en
 script:
+   - sh demoRun.sh
    - pubrunner --defaultsettings --test .
