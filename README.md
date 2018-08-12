@@ -89,6 +89,8 @@ pubrunner .
 
 This will download all the corpora files, build and apply models. PubRunner can be setup to use a cluster (using SnakeMake). This is highly recommended. On a cluster with approximately 300 concurrent jobs, this takes approximately 12 hours. Each node needs 4GB of RAM.
 
+It is not possible to exactly reproduce the results as the data in PubMed and PMC are constantly being added to. The data used in the paper is downloadable from Zenodo with the [Jun 30th 2018 release](http://doi.org/10.5281/zenodo.1302062).
+
 ## Inputs
 
 The text inputs for processing are:
