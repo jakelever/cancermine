@@ -17,20 +17,66 @@
 
 The CancerMine resource is a text-mined knowledgebase of drivers, oncogenes and tumor suppressors in cancer. Abstracts from PubMed and full-text articles from PubMed Central Open Access subset and Author Manuscript Collections are processed to find references to genes as drivers, oncogenes and tumor suppressors in different cancer types.
 
-## Using CancerMine
-
 CancerMine is an automatically updated dataset. You can navigate the data using the [web viewer](http://bionlp.bcgsc.ca/cancermine/) or you can download the latest data from [Zenodo](https://doi.org/10.5281/zenodo.1156241) (or through the [web viewer](http://bionlp.bcgsc.ca/cancermine/)). You likely would not have to run any of the code in this repository.
 
-## Installing and Running The Code
+## System Requirements
 
-This project relies on text mining using [Kindred](https://github.com/jakelever/kindred) and resource management with [PubRunner](https://github.com/jakelever/pubrunner). These can be installed through pip. Remember to install the English language model for Spacy.
+This is a Python3 project which has been tested on Centos 6/7 but should work on other Linux operating systems and MacOS. An individual process of this can be run on a laptop or desktop computer. But in order to process all of the literature (PubMed, etc), this should really be run on a cluster or server-like machine. A cluster that uses Slurm or the SunGrid engine (SGE) are supported. Each node needs only 4 GBs on RAM.
+
+This project relies on text mining using [Kindred](https://github.com/jakelever/kindred) and resource management with [PubRunner](https://github.com/jakelever/pubrunner). These can be installed through pip.
+
+## Installation Guide
+
+You can clone this repo using Git or download the [ZIP file](https://github.com/jakelever/cancermine/archive/master.zip) of it.
+
+```
+git clone https://github.com/jakelever/cancermine.git
+```
+
+The dependencies can be installed with the command below. Remember to install the English language model for Spacy.
 
 ```
 pip install kindred pubrunner
 python -m spacy download en
 ```
 
-To do a test run and check everything is okay, run:
+Installation should take a maximum of 15 minutes (mostly due to the Spacy and language models installation).
+
+## Demo
+
+We include example input and the expected output data for a small test run in the [exampledata/](https://github.com/jakelever/cancermine/tree/master/exampledata) directory. To run a small test run of the scripts you can follow the steps below. Alternatively, all these commands are in the [demoRun.sh](https://github.com/jakelever/cancermine/blob/master/demoRun.sh) file which can be executed independently (after installing dependencies). This file is run during the [TravisCI](https://travis-ci.org/jakelever/cancermine) test. This should only take five minutes.
+
+First you need to build the machine learning models. This will extract the training data and build the necessary models from it.
+
+```
+sh buildModelsIfNeeded.sh
+```
+
+Then you need to process the input wordlists to get them ready for quick access. This generates various data structures that are stored in a Python pickle.
+
+```
+python wordlistLoader.py --genes exampledata/mini_terms_genes.tsv --cancers exampledata/mini_terms_cancers.tsv --drugs exampledata/mini_terms_drugs.tsv --conflicting exampledata/mini_terms_conflicting.tsv --wordlistPickle exampledata/mini_terms.pickle
+```
+
+There is a small test input file ([examples/test.bioc.xml](https://github.com/jakelever/cancermine/blob/master/exampledata/input.bioc.xml)). It's in [BioC XML format](http://bioc.sourceforge.net/) which is a format for biomedical corpora. You can run the relation extraction process with the commands below. There are also mini wordlists for test usage which are tiny subsets of the [BioWordlists project](https://github.com/jakelever/biowordlists) project used for this.
+
+```
+python parseAndFindEntities.py --biocFile exampledata/input.bioc.xml --filterTerms filterTerms.txt --wordlistPickle exampledata/mini_terms.pickle --outSentencesFilename exampledata/intermediate_sentences.json
+
+python applyModelsToSentences.py --models models/cancermine.driver.model,models/cancermine.oncogene.model,models/cancermine.tumorsuppressor.model --filterTerms filterTerms.txt --wordlistPickle exampledata/mini_terms.pickle --genes exampledata/mini_terms_genes.tsv --cancerTypes exampledata/mini_terms_cancers.tsv --sentenceFile exampledata/intermediate_sentences.json --outData exampledata/intermediate_relations.json
+
+cat header.tsv exampledata/intermediate_relations.json > exampledata/out_unfiltered.tsv
+```
+
+And then you can run the filter and collate process using the command below on that.
+
+```
+python filterAndCollate.py --inUnfiltered exampledata/out_unfiltered.tsv --outCollated exampledata/out_collated.tsv --outSentences exampledata/out_sentences.tsv
+```
+
+## Instructions for use
+
+To run the full thing, you should use PubRunner. It manages the download of all the inputs outlined below. But first, you should do a test run (which should only last a minute or so):
 
 ```
 pubrunner --test .
@@ -41,7 +87,7 @@ Then to do the full run which may take a long time, run:
 pubrunner .
 ```
 
-This will download all the corpora files, build and apply models. PubRunner can be setup to use a cluster (using SnakeMake). This is highly recommended.
+This will download all the corpora files, build and apply models. PubRunner can be setup to use a cluster (using SnakeMake). This is highly recommended. On a cluster with approximately 300 concurrent jobs, this takes approximately 12 hours. Each node needs 4GB of RAM.
 
 ## Inputs
 
