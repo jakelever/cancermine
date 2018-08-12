@@ -1,0 +1,3 @@
+matching_id	role	cancer_id	cancer_normalized	gene_hugo_id	gene_entrez_id	gene_normalized	citation_count
+ad06a8e196876ea092ce6c8c53790fc9	Oncogene	DOID:3908	non-small cell lung carcinoma	HGNC:3236	1956	EGFR	1
+d2e0feaeb926fb89908a23a43d16e46a	Driver	DOID:3908	non-small cell lung carcinoma	HGNC:3236	1956	EGFR	1
