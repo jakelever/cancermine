@@ -61,11 +61,14 @@ python wordlistLoader.py --genes exampledata/mini_terms_genes.tsv --cancers exam
 There is a small test input file ([examples/test.bioc.xml](https://github.com/jakelever/cancermine/blob/master/exampledata/input.bioc.xml)). It's in [BioC XML format](http://bioc.sourceforge.net/) which is a format for biomedical corpora. You can run the relation extraction process with the commands below. There are also mini wordlists for test usage which are tiny subsets of the [BioWordlists project](https://github.com/jakelever/biowordlists) project used for this.
 
 ```
+# Find sentences that contain cancer types and gene names and filter using the terms in the filterTerms.txt
 python parseAndFindEntities.py --biocFile exampledata/input.bioc.xml --filterTerms filterTerms.txt --wordlistPickle exampledata/mini_terms.pickle --outSentencesFilename exampledata/intermediate_sentences.json
 
-python applyModelsToSentences.py --models models/cancermine.driver.model,models/cancermine.oncogene.model,models/cancermine.tumorsuppressor.model --filterTerms filterTerms.txt --wordlistPickle exampledata/mini_terms.pickle --genes exampledata/mini_terms_genes.tsv --cancerTypes exampledata/mini_terms_cancers.tsv --sentenceFile exampledata/intermediate_sentences.json --outData exampledata/intermediate_relations.json
+# Apply the machine learning models to identify actual mentions of drivers, oncogenes and tumor suppressors
+python applyModelsToSentences.py --models models/cancermine.driver.model,models/cancermine.oncogene.model,models/cancermine.tumorsuppressor.model --filterTerms filterTerms.txt --wordlistPickle exampledata/mini_terms.pickle --genes exampledata/mini_terms_genes.tsv --cancerTypes exampledata/mini_terms_cancers.tsv --sentenceFile exampledata/intermediate_sentences.json --outData exampledata/intermediate_relations.tsv
 
-cat header.tsv exampledata/intermediate_relations.json > exampledata/out_unfiltered.tsv
+# Add the header to this file
+cat header.tsv exampledata/intermediate_relations.tsv > exampledata/out_unfiltered.tsv
 ```
 
 And then you can run the filter and collate process using the command below on that.
@@ -118,6 +121,10 @@ You likely want **cancermine\_collated.tsv** if you just want the list of cancer
 ## Shiny App
 
 The code in [shiny/](https://github.com/jakelever/cancermine/tree/master/shiny) is the Shiny code used for the [web viewer](http://bionlp.bcgsc.ca/cancermine/). If it is helpful, please use the code for your own projects. The list of dependencies is found at the top of the [app.R](https://github.com/jakelever/cancermine/blob/master/shiny/app.R) file.
+
+## Explanation and Pseudocode
+
+The associated [pseudocode.md](https://github.com/jakelever/cancermine/tree/master/pseudocode.md) file contains detailed information about the purpose of the various scripts here.
 
 ## Paper
 
