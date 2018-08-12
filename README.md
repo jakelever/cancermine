@@ -44,7 +44,7 @@ Installation should take a maximum of 15 minutes (mostly due to the Spacy and la
 
 ## Demo
 
-We include example input and the expected output data for a small test run in the [exampledata/](https://github.com/jakelever/cancermine/tree/master/exampledata) directory. To run a small test run of the scripts you can follow the steps below. Alternatively, all these commands are in the [demoRun.sh](https://github.com/jakelever/cancermine/blob/master/demoRun.sh) file which can be executed independently (after installing dependencies). This file is run during the [TravisCI](https://travis-ci.org/jakelever/cancermine) test. This should only take five minutes.
+We include example input and the expected output data for a small test run in the [exampledata/](https://github.com/jakelever/cancermine/tree/master/exampledata) directory. To run a small test run of the scripts you can follow the steps below. Alternatively, all these commands are in the [demoRun.sh](https://github.com/jakelever/cancermine/blob/master/demoRun.sh) file which can be executed independently (after installing dependencies). This file is run during the [TravisCI](https://travis-ci.org/jakelever/cancermine) test. This should only take six minutes.
 
 First you need to build the machine learning models. This will extract the training data and build the necessary models from it.
 
