@@ -200,7 +200,29 @@ paper.ongeneCount <- length(unique(ongeneData$OncogeneID))
 paper.ongeneOverlapCount <- sum(unique(ongeneData$OncogeneID) %in% unique(cancermineOncogeneIDs$gene_entrez_id))
 paper.ongeneOverlapPerc <- round(100.0 * paper.ongeneOverlapCount / paper.ongeneCount)
 
-fig_comparisons <- arrangeGrob(cgcPlot,intogenPlot,tsgenePlot,ongenePlot, ncol=2)
+
+
+civicDB <- read.table('cancermine/nightly-ClinicalEvidenceSummaries.tsv',header=T,sep='\t',quote='',comment='')
+listInput <- list(CancerMine=unique(cancermine$gene_entrez_id),CIViC=unique(civicDB$entrez_id))
+civicPlot <- venn.diagram(
+  x = listInput,
+  scaled=F,
+  fill = c("grey", "white"),
+  cat.fontface = 2,
+  cat.pos = 0,
+  filename=NULL)
+civicPlot <- gTree(children=civicPlot)
+civicPlot <- grid.arrange(civicPlot,top='(e)')
+
+paper.civicCount <- length(unique(civicDB$entrez_id))
+paper.civicOverlapCount <- sum(unique(civicDB$entrez_id) %in% unique(cancermine$gene_entrez_id))
+paper.civicOverlapPerc <- round(100.0 * paper.civicOverlapCount / paper.civicCount)
+
+
+
+
+
+fig_comparisons <- arrangeGrob(cgcPlot,intogenPlot,tsgenePlot,ongenePlot, civicPlot, ncol=2)
 
 grid.arrange(fig_comparisons)
 
