@@ -54,10 +54,14 @@ paper.moreGenesThanCGC <- prettyNum(paper.moreGenesThanCGC,big.mark=',')
 
 
 listInput <- list(CancerMine=unique(noDrivers$combined),CGC=unique(cgcData$combined))
-upset(fromList(listInput), order.by = "freq", set_size.angles=45)
-
-grid.edit('arrange',name='arrange2')
-cgcPlot <- grid.grab()
+cgcPlot <- venn.diagram(
+  x = listInput,
+  scaled=F,
+  fill = c("grey", "white"),
+  cat.fontface = 2,
+  cat.pos = 0,
+  filename=NULL)
+cgcPlot <- gTree(children=cgcPlot)
 cgcPlot <- grid.arrange(cgcPlot,top='(a)')
 
 
@@ -143,13 +147,15 @@ paper.intogenGenesInCancermine <- prettyNum(paper.intogenGenesInCancermine,big.m
 
 #missing <- intogen2014[!(intogen2014$combined %in% cancermine$combined),]
 
-listInput <- list(cancermine=unique(cancermine$gene_normalized),intogen=unique(intogen2014$geneHGNCsymbol))
-upset(fromList(listInput), order.by = "freq", set_size.angles=45)
-
 listInput <- list(CancerMine=unique(cancermine$combined),IntOGen=unique(intogen2014$combined))
-upset(fromList(listInput), order.by = "freq", set_size.angles=45)
-grid.edit('arrange',name='arrange2')
-intogenPlot <- grid.grab()
+intogenPlot <- venn.diagram(
+  x = listInput,
+  scaled=F,
+  fill = c("grey", "white"),
+  cat.fontface = 2,
+  cat.pos = 0,
+  filename=NULL)
+intogenPlot <- gTree(children=intogenPlot)
 intogenPlot <- grid.arrange(intogenPlot,top='(b)')
 
 paper.moreGenesThanIntogen <- length(setdiff(unique(cancermine$gene_normalized),unique(intogen2014$geneHGNCsymbol)))
@@ -160,10 +166,16 @@ paper.moreGenesThanIntogen <- prettyNum(paper.moreGenesThanIntogen,big.mark=',')
 
 cancermineTSIDs <- cancermine[cancermine$role=='Tumor_Suppressor','gene_entrez_id',drop=F]
 tsgeneData <- read.table('cancermine/TSgene.txt',header=T,sep='\t')
+
 listInput <- list(CancerMine=unique(cancermineTSIDs$gene_entrez_id),TSGene=unique(tsgeneData$GeneID))
-upset(fromList(listInput), order.by = "freq", set_size.angles=45)
-grid.edit('arrange',name='arrange2')
-tsgenePlot <- grid.grab()
+tsgenePlot <- venn.diagram(
+  x = listInput,
+  scaled=F,
+  fill = c("grey", "white"),
+  cat.fontface = 2,
+  cat.pos = 0,
+  filename=NULL)
+tsgenePlot <- gTree(children=tsgenePlot)
 tsgenePlot <- grid.arrange(tsgenePlot,top='(c)')
 
 paper.tsgeneCount <- length(unique(tsgeneData$GeneID))
@@ -172,10 +184,16 @@ paper.tsgeneOverlapPerc <- round(100.0 * paper.tsgeneOverlapCount / paper.tsgene
 
 cancermineOncogeneIDs <- cancermine[cancermine$role=='Oncogene','gene_entrez_id',drop=F]
 ongeneData <- read.table('cancermine/ongene.txt',header=T,sep='\t',quote='')
+
 listInput <- list(CancerMine=unique(cancermineOncogeneIDs$gene_entrez_id),ONGene=unique(ongeneData$OncogeneID))
-upset(fromList(listInput), order.by = "freq", set_size.angles=45)
-grid.edit('arrange',name='arrange2')
-ongenePlot <- grid.grab()
+ongenePlot <- venn.diagram(
+  x = listInput,
+  scaled=F,
+  fill = c("grey", "white"),
+  cat.fontface = 2,
+  cat.pos = 0,
+  filename=NULL)
+ongenePlot <- gTree(children=ongenePlot)
 ongenePlot <- grid.arrange(ongenePlot,top='(d)')
 
 paper.ongeneCount <- length(unique(ongeneData$OncogeneID))
@@ -185,3 +203,6 @@ paper.ongeneOverlapPerc <- round(100.0 * paper.ongeneOverlapCount / paper.ongene
 fig_comparisons <- arrangeGrob(cgcPlot,intogenPlot,tsgenePlot,ongenePlot, ncol=2)
 
 grid.arrange(fig_comparisons)
+
+vennjunk <- dir(path=".", pattern="VennDiagram*") # ?dir
+removed <- file.remove(vennjunk) # ?file.remove
