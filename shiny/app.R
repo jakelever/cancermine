@@ -44,6 +44,15 @@ color_Oncogene <- colors[3]
 
 citationTableExplanation <- "<br /><br /><br /><b><a name='citationtable'>Citation Table:</a></b><br />Select row in table above to see associated citations and sentences<br /><br />"
 
+########################################################
+# Aggregate Data for Collapsed Version (no gene roles) #
+########################################################
+
+collated_noroles <- collated[, list(sum(citation_count),paste(matching_id,collapse=',')), by=list(cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized)]
+
+names(collated_noroles)[names(collated_noroles) == "V1"] = "citation_count"
+names(collated_noroles)[names(collated_noroles) == "V2"] = "matching_ids"
+
 #################################
 # Aggregate data for pie charts #
 #################################
@@ -108,6 +117,7 @@ ui <- function(req) {
                          sidebarPanel(
                            selectizeInput("gene_input", "Gene", geneNames, selected = 'EGFR', multiple = FALSE, options = list(maxOptions = 2*length(geneNames))),
                            plotlyOutput("gene_overview"),
+                           checkboxInput("gene_collapseroles", "Collapse roles", FALSE),
                            width=3
                          ),
                          mainPanel(
@@ -129,6 +139,7 @@ ui <- function(req) {
                          sidebarPanel(
                            selectizeInput("cancer_input", "Cancer", cancerNames, selected = 'acute T cell leukemia', multiple = FALSE, options = list(maxOptions = 2*length(cancerNames))),
                            plotlyOutput("cancer_overview"),
+                           checkboxInput("cancer_collapseroles", "Collapse roles", FALSE),
                            width=3
                          ),
                          mainPanel(
@@ -224,13 +235,27 @@ server <- function(input, output, session) {
     table
   })
   
+  geneData_noRoles <- reactive({
+    table <- collated_noroles[collated_noroles$gene_normalized==input$gene_input,]
+    table
+  })
+  
   output$gene_table <- DT::renderDataTable({
-    table <- geneData()
-    DT::datatable(table[,c('role','gene_normalized','cancer_normalized','citation_count')],
-                  selection = 'single',
-                  rownames = FALSE,
-                  colnames=c('Role','Gene', 'Cancer', 'Citation #'),
-                  options = list(pageLength = 20, lengthMenu = c(10, 20, 30), stateSave = TRUE))
+    if (input$gene_collapseroles) {
+      table <- geneData_noRoles()
+      DT::datatable(table[,c('gene_normalized','cancer_normalized','citation_count')],
+                    selection = 'single',
+                    rownames = FALSE,
+                    colnames=c('Gene', 'Cancer', 'Citation #'),
+                    options = list(pageLength = 20, lengthMenu = c(10, 20, 30), stateSave = TRUE))
+    } else {
+      table <- geneData()
+      DT::datatable(table[,c('role','gene_normalized','cancer_normalized','citation_count')],
+                    selection = 'single',
+                    rownames = FALSE,
+                    colnames=c('Role','Gene', 'Cancer', 'Citation #'),
+                    options = list(pageLength = 20, lengthMenu = c(10, 20, 30), stateSave = TRUE))
+    }
   })
   
   
@@ -290,9 +315,14 @@ server <- function(input, output, session) {
     sourceName <- paste('gene_barchart_',gene_bar_event_val$count,sep='')
     s <- event_data("plotly_click", source = sourceName)
     if (length(s) > 0) {
-      table <- geneData()
-      roleOptions <- c('Tumor_Suppressor','Oncogene','Driver')
-      rowNumber <- which(table$cancer_normalized==s$x & table$role==roleOptions[s$curveNumber+1])
+      if (input$gene_collapseroles) {
+        table <- geneData_noRoles()
+        rowNumber <- which(table$cancer_normalized==s$x)
+      } else {
+        table <- geneData()
+        roleOptions <- c('Tumor_Suppressor','Oncogene','Driver')
+        rowNumber <- which(table$cancer_normalized==s$x & table$role==roleOptions[s$curveNumber+1])
+      }
       
       currentPageNumber <- as.integer(input$gene_table_state$start / input$gene_table_state$length) + 1
       currentlySelectedRow <- input$gene_table_rows_selected
@@ -312,19 +342,36 @@ server <- function(input, output, session) {
   
   output$gene_citations <- DT::renderDataTable({
     if(length(input$gene_table_rows_selected)>0) {
-      table <- geneData()
-      row <- table[input$gene_table_rows_selected,]
-      entries <- sentences[sentences$matching_id==row$matching_id,]
+      if (input$gene_collapseroles) {
+        table <- geneData_noRoles()
+        row <- table[input$gene_table_rows_selected,]
+        matching_ids <- strsplit(row$matching_ids,',')[[1]]
+        entries <- sentences[sentences$matching_id %in% matching_ids,]
+      } else {
+        table <- geneData()
+        row <- table[input$gene_table_rows_selected,]
+        entries <- sentences[sentences$matching_id==row$matching_id,]
+      }
     } else {
       entries <- data.frame(matrix(nrow=0,ncol=ncol(sentences)))
       colnames(entries) <- colnames(sentences)
     }
-    DT::datatable(entries[,c('pubmed_link','journal_short','year','section','subsection','formatted_sentence'),],
-                  selection = 'none',
-                  rownames = FALSE,
-                  colnames=c('PMID','Journal','Year', 'Section', 'Subsection', 'Sentence'),
-                  escape = FALSE,
-                  options = list(pageLength = 20, lengthMenu = c(10, 20, 30)))
+    
+    if (input$gene_collapseroles) {
+      DT::datatable(entries[,c('pubmed_link','role','journal_short','year','section','subsection','formatted_sentence'),],
+                    selection = 'none',
+                    rownames = FALSE,
+                    colnames=c('PMID','Role','Journal','Year', 'Section', 'Subsection', 'Sentence'),
+                    escape = FALSE,
+                    options = list(pageLength = 20, lengthMenu = c(10, 20, 30)))
+    } else {
+      DT::datatable(entries[,c('pubmed_link','journal_short','year','section','subsection','formatted_sentence'),],
+                    selection = 'none',
+                    rownames = FALSE,
+                    colnames=c('PMID','Journal','Year', 'Section', 'Subsection', 'Sentence'),
+                    escape = FALSE,
+                    options = list(pageLength = 20, lengthMenu = c(10, 20, 30)))
+    }
   })
   
   
@@ -343,7 +390,11 @@ server <- function(input, output, session) {
       return("cancermine_collated_subset.tsv")
     },
     content = function(file) {
-      outdata <- geneData()
+      if (input$gene_collapseroles) {
+        outdata <- geneData()
+      } else {
+        outdata <- geneData_noRoles()
+      }
       write.table(outdata, file, row.names = FALSE, sep='\t', quote=F)
     }
   )
@@ -363,7 +414,11 @@ server <- function(input, output, session) {
       return("cancermine_sentences_gene.tsv")
     },
     content = function(file) {
-      table <- geneData()
+      if (input$gene_collapseroles) {
+        table <- geneData()
+      } else {
+        table <- geneData_noRoles()
+      }
       entries <- sentences[sentences$matching_id %in% table$matching_id,]
       
       write.table(entries, file, row.names = FALSE, sep='\t', quote=F)
@@ -376,9 +431,16 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       if(length(input$gene_table_rows_selected)>0) {
-        table <- geneData()
-        row <- table[input$gene_table_rows_selected,]
-        entries <- sentences[sentences$matching_id==row$matching_id,]
+        if (input$gene_collapseroles) {
+          table <- geneData_noRoles()
+          row <- table[input$gene_table_rows_selected,]
+          matching_ids <- strsplit(row$matching_ids,',')[[1]]
+          entries <- sentences[sentences$matching_id %in% matching_ids,]
+        } else {
+          table <- geneData()
+          row <- table[input$gene_table_rows_selected,]
+          entries <- sentences[sentences$matching_id==row$matching_id,]
+        }
       } else {
         entries <- data.frame(matrix(nrow=0,ncol=ncol(sentences)))
         colnames(entries) <- colnames(sentences)
@@ -431,13 +493,27 @@ server <- function(input, output, session) {
     table
   })
   
+  cancerData_noRoles <- reactive({
+    table <- collated_noroles[collated_noroles$cancer_normalized==input$cancer_input,]
+    table
+  })
+  
   output$cancer_table <- DT::renderDataTable({
-    table <- cancerData()
-    DT::datatable(table[,c('role','gene_normalized','cancer_normalized','citation_count')],
-                  selection = 'single',
-                  rownames = FALSE,
-                  colnames=c('Role','Gene', 'Cancer', 'Citation #'),
-                  options = list(pageLength = 20, lengthMenu = c(10, 20, 30), stateSave=TRUE))
+    if (input$cancer_collapseroles) {
+      table <- cancerData_noRoles()
+      DT::datatable(table[,c('gene_normalized','cancer_normalized','citation_count')],
+                    selection = 'single',
+                    rownames = FALSE,
+                    colnames=c('Gene', 'Cancer', 'Citation #'),
+                    options = list(pageLength = 20, lengthMenu = c(10, 20, 30), stateSave = TRUE))
+    } else {
+      table <- cancerData()
+      DT::datatable(table[,c('role','gene_normalized','cancer_normalized','citation_count')],
+                    selection = 'single',
+                    rownames = FALSE,
+                    colnames=c('Role','Gene', 'Cancer', 'Citation #'),
+                    options = list(pageLength = 20, lengthMenu = c(10, 20, 30), stateSave = TRUE))
+    }
   })
   
   cancerTableProxy = dataTableProxy('cancer_table')
@@ -499,9 +575,14 @@ server <- function(input, output, session) {
     sourceName <- paste('cancer_barchart_',cancer_bar_event_val$count,sep='')
     s <- event_data("plotly_click", source = sourceName)
     if (length(s) > 0) {
-      table <- cancerData()
-      roleOptions <- c('Tumor_Suppressor','Oncogene','Driver')
-      rowNumber <- which(table$gene_normalized==s$x & table$role==roleOptions[s$curveNumber+1])
+      if (input$cancer_collapseroles) {
+        table <- cancerData_noRoles()
+        rowNumber <- which(table$gene_normalized==s$x)
+      } else {
+        table <- cancerData()
+        roleOptions <- c('Tumor_Suppressor','Oncogene','Driver')
+        rowNumber <- which(table$gene_normalized==s$x & table$role==roleOptions[s$curveNumber+1])
+      }
       
       currentPageNumber <- as.integer(input$cancer_table_state$start / input$cancer_table_state$length) + 1
       currentlySelectedRow <- input$cancer_table_rows_selected
@@ -522,19 +603,35 @@ server <- function(input, output, session) {
   
   output$cancer_citations <- DT::renderDataTable({
     if(length(input$cancer_table_rows_selected)>0) {
-      table <- cancerData()
-      row <- table[input$cancer_table_rows_selected,]
-      entries <- sentences[sentences$matching_id==row$matching_id,]
+      if (input$cancer_collapseroles) {
+        table <- cancerData_noRoles()
+        row <- table[input$cancer_table_rows_selected,]
+        matching_ids <- strsplit(row$matching_ids,',')[[1]]
+        entries <- sentences[sentences$matching_id %in% matching_ids,]
+      } else {
+        table <- cancerData()
+        row <- table[input$cancer_table_rows_selected,]
+        entries <- sentences[sentences$matching_id==row$matching_id,]
+      }
     } else {
       entries <- data.frame(matrix(nrow=0,ncol=ncol(sentences)))
       colnames(entries) <- colnames(sentences)
     }
-    DT::datatable(entries[,c('pubmed_link','journal_short','year','section','subsection','formatted_sentence'),],
-                  selection = 'none',
-                  rownames = FALSE,
-                  colnames=c('PMID','Journal','Year', 'Section', 'Subsection', 'Sentence'),
-                  escape = FALSE,
-                  options = list(pageLength = 20, lengthMenu = c(10, 20, 30)))
+    
+    if (input$cancer_collapseroles) {
+      DT::datatable(entries[,c('pubmed_link','role','journal_short','year','section','subsection','formatted_sentence'),],
+                    selection = 'none',
+                    rownames = FALSE,
+                    colnames=c('PMID','Role','Journal','Year', 'Section', 'Subsection', 'Sentence'),
+                    escape = FALSE,
+                    options = list(pageLength = 20, lengthMenu = c(10, 20, 30)))
+    } else {
+      DT::datatable(entries[,c('pubmed_link','journal_short','year','section','subsection','formatted_sentence'),],
+                    selection = 'none',
+                    rownames = FALSE,
+                    colnames=c('PMID','Journal','Year', 'Section', 'Subsection', 'Sentence'),
+                    escape = FALSE,
+                    options = list(pageLength = 20, lengthMenu = c(10, 20, 30)))}
   })
   
   cancer_event_val <- reactiveValues(count = 0)
@@ -572,7 +669,11 @@ server <- function(input, output, session) {
       return("cancermine_collated.tsv")
     },
     content = function(file) {
-      outdata <- collated
+      if (input$cancer_collapseroles) {
+        table <- collated_noroles
+      } else {
+        table <- collated
+      }
       write.table(outdata, file, row.names = FALSE, sep='\t', quote=F)
     }
   )
@@ -582,7 +683,11 @@ server <- function(input, output, session) {
       return("cancermine_collated_subset.tsv")
     },
     content = function(file) {
-      outdata <- cancerData()
+      if (input$cancer_collapseroles) {
+        table <- cancerData_noRoles()
+      } else {
+        table <- cancerData()
+      }
       write.table(outdata, file, row.names = FALSE, sep='\t', quote=F)
     }
   )
@@ -602,7 +707,11 @@ server <- function(input, output, session) {
       return("cancermine_sentences_cancer.tsv")
     },
     content = function(file) {
-      table <- cancerData()
+      if (input$cancer_collapseroles) {
+        table <- cancerData_noRoles()
+      } else {
+        table <- cancerData()
+      }
       entries <- sentences[sentences$matching_id %in% table$matching_id,]
       
       write.table(entries, file, row.names = FALSE, sep='\t', quote=F)
@@ -615,9 +724,16 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       if(length(input$cancer_table_rows_selected)>0) {
-        table <- cancerData()
-        row <- table[input$cancer_table_rows_selected,]
-        entries <- sentences[sentences$matching_id==row$matching_id,]
+        if (input$cancer_collapseroles) {
+          table <- cancerData_noRoles()
+          row <- table[input$cancer_table_rows_selected,]
+          matching_ids <- strsplit(row$matching_ids,',')[[1]]
+          entries <- sentences[sentences$matching_id %in% matching_ids,]
+        } else {
+          table <- cancerData()
+          row <- table[input$cancer_table_rows_selected,]
+          entries <- sentences[sentences$matching_id==row$matching_id,]
+        }
       } else {
         entries <- data.frame(matrix(nrow=0,ncol=ncol(sentences)))
         colnames(entries) <- colnames(sentences)
@@ -626,6 +742,14 @@ server <- function(input, output, session) {
       write.table(entries, file, row.names = FALSE, sep='\t', quote=F)
     }
   )
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   genelistData <- reactive({
