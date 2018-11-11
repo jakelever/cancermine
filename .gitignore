@@ -10,3 +10,4 @@ lib/
 cancermine_collated.tsv
 cancermine_sentences.tsv
 cancermine_unfiltered.tsv
+.Rproj.user
