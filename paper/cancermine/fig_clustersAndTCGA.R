@@ -5,39 +5,24 @@ source('cancermine/plotHeatmapWithDendro.R')
 
 collatedFilename <- 'cancermine/cancermine_collated.tsv'
 collatedFilename <- normalizePath(collatedFilename)
-cancermineCollated <- read.table(collatedFilename,header=T,sep='\t',quote='',comment.char='',encoding="UTF-8")
+cancermine <- read.table(collatedFilename,header=T,sep='\t',quote='',comment.char='',encoding="UTF-8")
 
 
-sentencesFilename <- 'cancermine/cancermine_sentences.tsv'
-sentencesFilename <- normalizePath(sentencesFilename)
-cancermineSentences <- read.table(sentencesFilename,header=T,sep='\t',quote='',comment.char='',encoding="UTF-8")
-cancermineSentences$journalShort <- strtrim(cancermineSentences$journal,21)
-
-
-paper.clusteringTopCancerCount <- 30
-cancerCounts <- plyr::count(cancermineSentences[,c('cancer_normalized'),drop=F])
-cancerCounts <- cancerCounts[order(cancerCounts$freq,decreasing=T),]
-topCancers <- cancerCounts[1:paper.clusteringTopCancerCount,'cancer_normalized']
-
-#topCancers <- 
-geneCounts <- plyr::count(cancermineSentences[,c('gene_normalized'),drop=F])
-geneCounts <- geneCounts[order(geneCounts$freq,decreasing=T),]
-topGenes <- geneCounts[1:paper.clusteringTopCancerCount,'gene_normalized']
-
-topCancermineCounts <- cancermineCollated
-topCancermineCounts <- topCancermineCounts[topCancermineCounts$cancer_normalized %in% topCancers,]
-topCancermineCounts <- topCancermineCounts[topCancermineCounts$gene_normalized %in% topGenes,]
-topCancermineCounts$gene_and_role <- factor(paste(topCancermineCounts$gene_normalized, topCancermineCounts$role, sep=':'))
-topCancermineCounts$cancer_normalized <- factor(as.character(topCancermineCounts$cancer_normalized))
-
-selectedCancers <- c('acute lymphocytic leukemia','glioblastoma multiforme')
-selectedCancermineCounts <- cancermineCollated
-selectedCancermineCounts <- selectedCancermineCounts[selectedCancermineCounts$cancer_normalized %in% selectedCancers,]
-selectedCancermineCounts$gene_and_role <- factor(paste(selectedCancermineCounts$gene_normalized, selectedCancermineCounts$role, sep=':'))
-selectedCancermineCounts$cancer_normalized <- factor(as.character(selectedCancermineCounts$cancer_normalized))
-
-
-cancerCountsToHeatmapData <- function(myCancerCounts) {
+selectDataForHeatmap <- function(cancermine,selectedCancers,roleCount) {
+  myCancerCounts <- cancermine[cancermine$cancer_normalized %in% selectedCancers,]
+  myCancerCounts$gene_and_role <- factor(paste(myCancerCounts$gene_normalized, myCancerCounts$role, sep=':'))
+  
+  selectedRoles <- myCancerCounts[,c('gene_and_role','citation_count')]
+  selectedRoles <- selectedRoles[order(selectedRoles$citation_count,decreasing=T),]
+  selectedRoles <- selectedRoles[!duplicated(selectedRoles$gene_and_role),]
+  selectedRoles <- selectedRoles[1:roleCount,]
+  
+  myCancerCounts <- cancermine[cancermine$cancer_normalized %in% selectedCancers,]
+  myCancerCounts$gene_and_role <- factor(paste(myCancerCounts$gene_normalized, myCancerCounts$role, sep=':'))
+  myCancerCounts <- myCancerCounts[myCancerCounts$gene_and_role %in% selectedRoles$gene_and_role,]
+  myCancerCounts$cancer_normalized <- factor(myCancerCounts$cancer_normalized)
+  myCancerCounts$gene_and_role <- factor(myCancerCounts$gene_and_role)
+  
   sm <- sparseMatrix(i=as.integer(myCancerCounts$cancer_normalized), 
                      j=as.integer(myCancerCounts$gene_and_role),
                      x=log10(myCancerCounts$citation_count),
@@ -60,9 +45,14 @@ cancerCountsToHeatmapData <- function(myCancerCounts) {
 
 heatmapCols <- brewer.pal(9,'YlOrRd')
 
-topHeatmapData <- cancerCountsToHeatmapData(topCancermineCounts)
-selectedHeatmapData <- cancerCountsToHeatmapData(selectedCancermineCounts)
 
+paper.clusteringTopCancerCount <- 30
+cancerCounts <- aggregate(cancermine$citation_count, by=list(cancer_normalized=cancermine$cancer_normalized), FUN=sum)
+colnames(cancerCounts) <- c('cancer_normalized','total_citation_count')
+cancerCounts <- cancerCounts[order(cancerCounts$total_citation_count,decreasing=T),]
+topCancers <- cancerCounts[1:paper.clusteringTopCancerCount,'cancer_normalized']
+
+topHeatmapData <- selectDataForHeatmap(cancermine,topCancers,40)
 
 fig_profiles <- plotHeatmapWithDendro(topHeatmapData)
 fig_profiles <- arrangeGrob(fig_profiles,top='(a)')
