@@ -184,7 +184,46 @@ subsectionPlot <- barchart(freq ~ subsection,
 subsectionPlot <- arrangeGrob(subsectionPlot,top='(d)')
 
 
-fig_time <- arrangeGrob(ratePlot,rolePlot,sectionPlot,subsectionPlot,ncol=2)
+
+
+
+
+
+
+genesAndYears <- cancermineSentences[,c('gene_entrez_id','year')]
+genesAndYears <- genesAndYears[!duplicated(genesAndYears),]
+
+uniqueGenesByYear <- plyr::count(genesAndYears[,c('year'),drop=F])
+uniqueGenesByYear$yearTxt <- as.character(uniqueGenesByYear$year)
+uniqueGenesByYear <- uniqueGenesByYear[uniqueGenesByYear$year<2018,]
+
+uniqueGenesPlot <- barchart(freq ~ yearTxt, 
+                     uniqueGenesByYear,
+                     col='black',
+                     scales=list(x=list(rot=45,labels=labels)),
+                     horizontal=F)
+uniqueGenesPlot = arrangeGrob(uniqueGenesPlot,top='(e)')
+grid.arrange(uniqueGenesPlot)
+
+
+cancersAndYears <- cancermineSentences[,c('cancer_id','year')]
+cancersAndYears <- cancersAndYears[!duplicated(cancersAndYears),]
+
+uniqueCancersByYear <- plyr::count(cancersAndYears[,c('year'),drop=F])
+uniqueCancersByYear$yearTxt <- as.character(uniqueCancersByYear$year)
+uniqueCancersByYear <- uniqueCancersByYear[uniqueCancersByYear$year<2018,]
+
+uniqueCancersPlot <- barchart(freq ~ yearTxt, 
+                            uniqueCancersByYear,
+                            col='black',
+                            scales=list(x=list(rot=45,labels=labels)),
+                            horizontal=F)
+uniqueCancersPlot = arrangeGrob(uniqueCancersPlot,top='(f)')
+grid.arrange(uniqueCancersPlot)
+
+
+
+
+fig_time <- arrangeGrob(ratePlot,rolePlot,sectionPlot,subsectionPlot,uniqueGenesPlot,uniqueCancersPlot,ncol=2)
 
 grid.arrange(fig_time)
-
