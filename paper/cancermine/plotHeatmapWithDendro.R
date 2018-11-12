@@ -6,10 +6,8 @@ plotHeatmapWithDendro <- function(mat) {
   dend <- as.dendrogram(hclust(dist(mat)))
   dend_data <- dendro_data(dend)
   
-  #sample_cluster <- hclust(dist(t(mat)))
-  #sample_cluster$labels[c(sample_cluster$order)]
-  tmpHeatmap <- heatmap.2(topHeatmapData, trace='none',dendrogram='row', col=heatmapCols, margins=c(15,15))
-  
+  heatmapCols <- brewer.pal(9,'YlOrRd')
+  tmpHeatmap <- heatmap.2(mat, trace='none',dendrogram='row', col=heatmapCols, margins=c(15,15))
   
   segment_data <- with(
     segment(dend_data), 

@@ -7,6 +7,7 @@ library(reshape2)
 library(RColorBrewer)
 library(data.table)
 library(stringr)
+library(ggplot2)
 
 # Weird hack as R sometimes "forgets" its working directory
 wd <- setwd(".")
@@ -53,6 +54,10 @@ collated_noroles <- collated[, list(sum(citation_count),paste(matching_id,collap
 names(collated_noroles)[names(collated_noroles) == "V1"] = "citation_count"
 names(collated_noroles)[names(collated_noroles) == "V2"] = "matching_ids"
 
+collated_noroles <- collated_noroles[order(collated_noroles$cancer_normalized),]
+collated_noroles <- collated_noroles[order(collated_noroles$gene_normalized),]
+collated_noroles <- collated_noroles[order(collated_noroles$citation_count,decreasing=T),]
+
 #################################
 # Aggregate data for pie charts #
 #################################
@@ -92,15 +97,28 @@ genesWithCitations$gene_link <- sprintf("<a href='?gene=%s' target='_blank'>%s</
 genesWithCitations$gene_normalized_lower <- str_to_lower(genesWithCitations$gene_normalized)
 genelist_legend <- '<p></p><div style="display: inline-block; height:20px; width:20px; background-color:#66C2A5">&nbsp;</div> Driver <div style="display: inline-block; height:20px; width:20px; background-color:#8DA0CB">&nbsp;</div> Oncogene <div style="display: inline-block; height:20px; width:20px; background-color:#FC8D62">&nbsp;</div> Tumor Suppressor'
 
+############################
+# Prep Cancermine Profiles #
+############################
+source('profile_clustering.R')
+cancermineProfiles <- generateProfiles(collated)
 
+paper.clusteringTopCancerCount <- 25
+paper.clusteringTopGeneRoleCount <- 25
+cancerCounts <- aggregate(collated$citation_count, by=list(cancer_normalized=collated$cancer_normalized), FUN=sum)
+colnames(cancerCounts) <- c('cancer_normalized','total_citation_count')
+cancerCounts <- cancerCounts[order(cancerCounts$total_citation_count,decreasing=T),]
+topCancers <- cancerCounts[1:paper.clusteringTopCancerCount,'cancer_normalized']
 
+clusteringExplanation <- '<p><h3>CancerMine Profiles</h3></p><p>This plot shows the importance of strongly associated gene roles for the selected cancer types. The brighter the square, the more important that gene role is for that cancer type. It clusters similar cancer types together. You can change which cancer types to cluster by changing the choices below. For a summary of how the gene importance is calculated, see the FAQs on the help page.</p>'
 
 ui <- function(req) {
   fluidPage(
     tags$head(
       includeHTML("google-analytics.js"),
       includeHTML("metadata.html"),
-      tags$style(".rightAlign{float:right; margin-left:5px; margin-bottom: 20px;}")
+      tags$style(".rightAlign{float:right; margin-left:5px; margin-bottom: 20px;}"),
+      tags$style(HTML('#clustering_update{background-color:#b3ccff}'))
     ),
     titlePanel("",windowTitle="CancerMine"),
     helpText(includeHTML("subheader.html")),
@@ -118,6 +136,7 @@ ui <- function(req) {
                            selectizeInput("gene_input", "Gene", geneNames, selected = 'EGFR', multiple = FALSE, options = list(maxOptions = 2*length(geneNames))),
                            plotlyOutput("gene_overview"),
                            checkboxInput("gene_collapseroles", "Collapse roles", FALSE),
+                           actionButton("gene_clustercancers", "Explore gene with clustering"),
                            width=3
                          ),
                          mainPanel(
@@ -164,6 +183,19 @@ ui <- function(req) {
                          downloadButton("genelist_download", label = "Download", class='rightAlign'),
                          DT::dataTableOutput("genelist_resulttable"),
                          helpText(includeHTML("cc0.html"))),
+                tabPanel("Clustering",
+                         sidebarPanel(
+                           HTML(clusteringExplanation),
+                           selectInput("clustering_cancers","Cancers to Cluster",choices=levels(collated$cancer_normalized),multiple=T,selected=topCancers),
+                           actionButton("clustering_clear", "Clear selection",width="45%"),
+                           actionButton("clustering_usetopcancers", "Use 25 cancer list",width="45%"),
+                           HTML("<p></p>"),
+                           actionButton("clustering_update", "Update Plot",width="45%"),
+                           width=3
+                         ),
+                         mainPanel(
+                           plotlyOutput("clustering_output"))
+                ),
                 tabPanel("Help", 
                          includeHTML("help.html"),
                          helpText(includeHTML("cc0.html")))
@@ -198,6 +230,10 @@ server <- function(input, output, session) {
       }
       if (!is.null(query[['genelist']])) {
         updateTabsetPanel(session, 'maintabs', selected = "With Gene List")
+        url_event_val$count <- 1
+      }
+      if (!is.null(query[['clustering']])) {
+        updateTabsetPanel(session, 'maintabs', selected = "Clustering")
         url_event_val$count <- 1
       }
       if (!is.null(query[['matching_id']])) {
@@ -793,7 +829,56 @@ server <- function(input, output, session) {
     }
   )
   
+  clusterGeneSet <- eventReactive(input$clustering_update, {
+    input$clustering_cancers
+  })
+  
+  output$clustering_output <- renderPlotly({
+    if (input$clustering_update == 0) {
+      cancers <- topCancers
+    } else {
+      cancers <- clusterGeneSet()
+    }
+    
+    if (length(cancers) >= 2) {
+      clusterHeatmapData <- selectDataForHeatmap(cancermineProfiles,cancers,paper.clusteringTopGeneRoleCount)
+      p <- heatmaply(clusterHeatmapData) %>% layout(height = 800) %>% config(displayModeBar = F)
+    } else {
+      p <- plotly_empty(type='pie') %>% config(displayModeBar = F)
+    }
+    p$elementId <- NULL
+    p
+    
+    #clusterHeatmapData <- selectDataForHeatmap(cancermineProfiles,topCancers,39)
+    #plotHeatmapWithDendro(clusterHeatmapData)
+  })#, height = function() {
+  #  0.6*session$clientData$output_clustering_width
+  #})
+ 
+  observeEvent(input$gene_clustercancers, {
+    table <- geneData_noRoles()
+    top15 <- table$cancer_normalized[1:15]
+    
+    notInTheList <- cancerCounts$cancer_normalized[!(cancerCounts$cancer_normalized %in% table$cancer_normalized)]
+    notTop15 <- notInTheList[1:15]
+    
+    selected <-  c(as.character(top15),as.character(notTop15))
+    
+    updateSelectizeInput(session, "clustering_cancers", selected = selected)
+    updateTabsetPanel(session, 'maintabs', selected = "Clustering")
+    
+  })
+  
+  
+  observeEvent(input$clustering_clear, {
+    updateSelectizeInput(session, "clustering_cancers", selected = F)
+  })
+  observeEvent(input$clustering_usetopcancers, {
+    updateSelectizeInput(session, "clustering_cancers", selected = topCancers)
+  })
 }
+
+library(heatmaply)
 
 shinyApp(ui, server)
 
