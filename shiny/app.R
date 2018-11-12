@@ -136,7 +136,6 @@ ui <- function(req) {
                            selectizeInput("gene_input", "Gene", geneNames, selected = 'EGFR', multiple = FALSE, options = list(maxOptions = 2*length(geneNames))),
                            plotlyOutput("gene_overview"),
                            checkboxInput("gene_collapseroles", "Collapse roles", FALSE),
-                           actionButton("gene_clustercancers", "Explore gene with clustering"),
                            width=3
                          ),
                          mainPanel(
@@ -854,20 +853,6 @@ server <- function(input, output, session) {
   })#, height = function() {
   #  0.6*session$clientData$output_clustering_width
   #})
- 
-  observeEvent(input$gene_clustercancers, {
-    table <- geneData_noRoles()
-    top15 <- table$cancer_normalized[1:15]
-    
-    notInTheList <- cancerCounts$cancer_normalized[!(cancerCounts$cancer_normalized %in% table$cancer_normalized)]
-    notTop15 <- notInTheList[1:15]
-    
-    selected <-  c(as.character(top15),as.character(notTop15))
-    
-    updateSelectizeInput(session, "clustering_cancers", selected = selected)
-    updateTabsetPanel(session, 'maintabs', selected = "Clustering")
-    
-  })
   
   
   observeEvent(input$clustering_clear, {
