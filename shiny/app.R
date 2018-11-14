@@ -842,18 +842,18 @@ server <- function(input, output, session) {
     
     if (length(cancers) >= 2) {
       clusterHeatmapData <- selectDataForHeatmap(cancermineProfiles,cancers,paper.clusteringTopGeneRoleCount)
-      p <- heatmaply(clusterHeatmapData) %>% layout(height = 800) %>% config(displayModeBar = F)
+      p <- suppressMessages(suppressWarnings(
+        heatmaply(clusterHeatmapData) %>% 
+          layout(height = 800) %>% 
+          config(displayModeBar = F)
+      ))
     } else {
       p <- plotly_empty(type='pie') %>% config(displayModeBar = F)
     }
     p$elementId <- NULL
-    p
+    suppressMessages(p)
     
-    #clusterHeatmapData <- selectDataForHeatmap(cancermineProfiles,topCancers,39)
-    #plotHeatmapWithDendro(clusterHeatmapData)
-  })#, height = function() {
-  #  0.6*session$clientData$output_clustering_width
-  #})
+  })
   
   
   observeEvent(input$clustering_clear, {
