@@ -8,6 +8,7 @@ library(RColorBrewer)
 library(data.table)
 library(stringr)
 library(ggplot2)
+library(heatmaply)
 
 # Weird hack as R sometimes "forgets" its working directory
 wd <- setwd(".")
@@ -862,8 +863,6 @@ server <- function(input, output, session) {
     updateSelectizeInput(session, "clustering_cancers", selected = topCancers)
   })
 }
-
-library(heatmaply)
 
 shinyApp(ui, server)
 
