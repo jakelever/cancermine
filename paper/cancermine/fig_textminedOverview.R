@@ -13,11 +13,20 @@ cancermineSentences <- read.table(sentencesFilename,header=T,sep='\t',quote='',c
 cancermineSentences$journal_extra_short <- tolower(strtrim(cancermineSentences$journal,21))
 
 
-
+paper.totalRoleCount <- nrow(cancermineCollated)
 
 paper.titleCount <- sum(cancermineSentences$section=='title')
 paper.abstractCount <- sum(cancermineSentences$section=='abstract')
 paper.articleCount <- sum(cancermineSentences$section=='article')
+
+paper.percFromFullText <- round(100*paper.articleCount / (paper.articleCount+paper.titleCount+paper.abstractCount),1)
+
+abstractTitleOnly <- cancermineSentences[cancermineSentences$section!='article','matching_id']
+paper.percOnlyInFullText <- round(100-100*(sum(cancermineCollated$matching_id %in% abstractTitleOnly)/nrow(cancermineCollated)),1)
+
+paper.driverMentionCount <- length(cancermineSentences[cancermineSentences$role=='Driver','gene_normalized'])
+paper.oncogeneMentionCount <- length(cancermineSentences[cancermineSentences$role=='Oncogene','gene_normalized'])
+paper.tumorSuppressorMentionCount <- length(cancermineSentences[cancermineSentences$role=='Tumor_Suppressor','gene_normalized'])
 
 paper.geneDriverCount <- length(unique(cancermineSentences[cancermineSentences$role=='Driver','gene_normalized']))
 paper.geneOncogeneCount <- length(unique(cancermineSentences[cancermineSentences$role=='Oncogene','gene_normalized']))
@@ -157,6 +166,7 @@ paper.triplesWithSingleCitations <- sum(cancermineCollated$citation_count==1)
 paper.triplesWithMultipleCitations <- sum(cancermineCollated$citation_count>1)
 paper.triplesWithAnyCitations <- nrow(cancermineCollated)
 paper.percSingleCitations <- round(100*paper.triplesWithSingleCitations/paper.triplesWithAnyCitations,1)
+paper.percMultipleCitations <- round(100*paper.triplesWithMultipleCitations/paper.triplesWithAnyCitations,1)
 
 paper.triplesWithSingleCitations <- prettyNum(paper.triplesWithSingleCitations,big.mark=',')
 paper.triplesWithAnyCitations <- prettyNum(paper.triplesWithAnyCitations,big.mark=',')

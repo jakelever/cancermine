@@ -43,33 +43,22 @@ selectDataForHeatmap <- function(cancermineProfiles,selectedCancers,roleCount) {
 
 cancermineProfiles <- generateProfiles(cancermine)
 
-paper.clusteringTopCancerCount <- 30
+paper.clusteringTopCancerCount <- 25
+paper.clusteringTopGeneRoleCount <- 25
 cancerCounts <- aggregate(cancermine$citation_count, by=list(cancer_normalized=cancermine$cancer_normalized), FUN=sum)
 colnames(cancerCounts) <- c('cancer_normalized','total_citation_count')
 cancerCounts <- cancerCounts[order(cancerCounts$total_citation_count,decreasing=T),]
 topCancers <- cancerCounts[1:paper.clusteringTopCancerCount,'cancer_normalized']
 
-topHeatmapData <- selectDataForHeatmap(cancermineProfiles,topCancers,40)
+clusterHeatmapData <- selectDataForHeatmap(cancermineProfiles,topCancers,paper.clusteringTopGeneRoleCount)
 
-moreCancers <- cancerCounts[1:50,'cancer_normalized']
-allData <- selectDataForHeatmap(cancermineProfiles,moreCancers,10000)
-profilePCA <- prcomp(allData)
-twoPCs <- as.data.frame(profilePCA$x[,1:2])
-twoPCs$cancer_normalized <- row.names(twoPCs)
-
-ggplot(twoPCs[1:50,], aes(x= PC1, y = PC2)) + 
-  geom_point(color = "blue", size = 3) + 
-  geom_label_repel(aes(label = cancer_normalized),
-                   box.padding   = 0.35, 
-                   point.padding = 0.5,
-                   segment.color = 'grey50')
-
-distMatrix <- as.matrix(dist(allData))
-heatmap.2(distMatrix,trace="none")
-
-fig_profiles <- plotHeatmapWithDendro(topHeatmapData)
+#fig_profiles <- plotHeatmapWithDendro(clusterHeatmapData)
+#heatmaply(clusterHeatmapData,file='test.jpeg')
+img <- readPNG("clustering.png")
+fig_profiles <- rasterGrob(img, interpolate=TRUE)
 fig_profiles <- arrangeGrob(fig_profiles,top='(a)')
 grid.arrange(fig_profiles)
+
 
 tcgaProfiles <- read.table('cancermine/cancermineProfilesTCGA.tsv',sep='\t',header=T,row.names=1)
 tcgaProfiles.melted <- melt(as.matrix(tcgaProfiles))

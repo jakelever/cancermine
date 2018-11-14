@@ -92,7 +92,7 @@ sectionPlot <- barchart(freq ~ yearTxt,
 sectionPlot = arrangeGrob(sectionPlot,top='(c)')
 grid.arrange(sectionPlot)
 
-
+paper.novelGeneRolesPerMonth2017 <- round(nrow(cancermineSentences[cancermineSentences$isNovel & cancermineSentences$year==2017,]) / 12)
 paper.novelDriverPerMonth2017 <- round(nrow(cancermineSentences[cancermineSentences$isNovel & cancermineSentences$role=='Driver' & cancermineSentences$year==2017,]) / 12)
 paper.novelOncogenePerMonth2017 <- round(nrow(cancermineSentences[cancermineSentences$isNovel & cancermineSentences$role=='Oncogene' & cancermineSentences$year==2017,]) / 12)
 paper.novelTumorSuppressorPerMonth2017 <- round(nrow(cancermineSentences[cancermineSentences$isNovel & cancermineSentences$role=='Tumor_Suppressor' & cancermineSentences$year==2017,]) / 12)
@@ -227,3 +227,13 @@ grid.arrange(uniqueCancersPlot)
 fig_time <- arrangeGrob(ratePlot,rolePlot,sectionPlot,subsectionPlot,uniqueGenesPlot,uniqueCancersPlot,ncol=2)
 
 grid.arrange(fig_time)
+
+
+sentencesWithNovelty <- cancermineSentences[cancermineSentences$section=='article',]
+sentencesWithNovelty <- sentencesWithNovelty[order(sentencesWithNovelty$year,sentencesWithNovelty$month,sentencesWithNovelty$day),]
+sentencesWithNovelty$isNovel <- !duplicated(sentencesWithNovelty[,c('role','gene_entrez_id','cancer_id')])
+
+noveltyWithSubsectionTable <- table(sentencesWithNovelty$isNovel,sentencesWithNovelty$subsection)
+noveltyWithSubsectionTest <- chisq.test(noveltyWithSubsectionTable)
+
+paper.noveltyWithSubsection_pvalue <- signif(noveltyWithSubsectionTest$p.value,2)
