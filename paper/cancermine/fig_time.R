@@ -45,6 +45,7 @@ labels[labels%%5!=0] <- ''
 ratePlot <- barchart(freq ~ yearTxt, 
                      novelAndNotNovelYearCounts, 
                      groups=novel,
+                     ylab="Mentions per year",
                      par.settings = my.settings,
                      auto.key=list(space="top", columns=2, 
                                    points=FALSE, rectangles=TRUE),
@@ -83,6 +84,7 @@ labels[labels%%5!=0] <- ''
 sectionPlot <- barchart(freq ~ yearTxt, 
                         sectionData, 
                      groups=section,
+                     ylab="Mentions per year",
                      par.settings = my.settings,
                      auto.key=list(space="top", columns=1, 
                                    points=FALSE, rectangles=TRUE),
@@ -132,14 +134,15 @@ my.settings <- list(
 labels <- sort(unique(roleData$year))
 labels[labels%%5!=0] <- ''
 rolePlot <- barchart(freq ~ yearTxt, 
-                        roleData, 
-                        groups=role,
-                        par.settings = my.settings,
-                        auto.key=list(space="top", columns=1, 
-                                      points=FALSE, rectangles=TRUE),
-                        scales=list(x=list(rot=45,labels=labels)),
-                        stack=T,
-                        horizontal=F)
+                     roleData, 
+                     groups=role,
+                     ylab="Mentions per year",
+                     par.settings = my.settings,
+                     auto.key=list(space="top", columns=1, 
+                                   points=FALSE, rectangles=TRUE),
+                     scales=list(x=list(rot=45,labels=labels)),
+                     stack=T,
+                     horizontal=F)
 rolePlot = arrangeGrob(rolePlot,top='(b)')
 grid.arrange(rolePlot)
 
@@ -179,6 +182,7 @@ cancermineSentences$subsection <- factor(as.character(cancermineSentences$subsec
 subsectionCounts <- plyr::count(cancermineSentences[cancermineSentences$section=='article',c('subsection'),drop=F])
 subsectionPlot <- barchart(freq ~ subsection, 
                            subsectionCounts,
+                           ylab="Mentions",
                            scales=list(x=list(rot=45)),
                            col="black")
 subsectionPlot <- arrangeGrob(subsectionPlot,top='(d)')
@@ -200,6 +204,7 @@ uniqueGenesByYear <- uniqueGenesByYear[uniqueGenesByYear$year<2018,]
 uniqueGenesPlot <- barchart(freq ~ yearTxt, 
                      uniqueGenesByYear,
                      col='black',
+                     ylab="Mentions per year",
                      scales=list(x=list(rot=45,labels=labels)),
                      horizontal=F)
 uniqueGenesPlot = arrangeGrob(uniqueGenesPlot,top='(e)')
@@ -216,6 +221,7 @@ uniqueCancersByYear <- uniqueCancersByYear[uniqueCancersByYear$year<2018,]
 uniqueCancersPlot <- barchart(freq ~ yearTxt, 
                             uniqueCancersByYear,
                             col='black',
+                            ylab="Mentions per year",
                             scales=list(x=list(rot=45,labels=labels)),
                             horizontal=F)
 uniqueCancersPlot = arrangeGrob(uniqueCancersPlot,top='(f)')

@@ -14,6 +14,8 @@ cancermineSentences$journal_extra_short <- tolower(strtrim(cancermineSentences$j
 
 
 paper.totalRoleCount <- nrow(cancermineCollated)
+paper.totalRoleCount <- prettyNum(paper.totalRoleCount,big.mark=',')
+
 
 paper.titleCount <- sum(cancermineSentences$section=='title')
 paper.abstractCount <- sum(cancermineSentences$section=='abstract')
@@ -27,6 +29,11 @@ paper.percOnlyInFullText <- round(100-100*(sum(cancermineCollated$matching_id %i
 paper.driverMentionCount <- length(cancermineSentences[cancermineSentences$role=='Driver','gene_normalized'])
 paper.oncogeneMentionCount <- length(cancermineSentences[cancermineSentences$role=='Oncogene','gene_normalized'])
 paper.tumorSuppressorMentionCount <- length(cancermineSentences[cancermineSentences$role=='Tumor_Suppressor','gene_normalized'])
+
+paper.driverMentionCount <- prettyNum(paper.driverMentionCount,big.mark=',')
+paper.oncogeneMentionCount <- prettyNum(paper.oncogeneMentionCount,big.mark=',')
+paper.tumorSuppressorMentionCount <- prettyNum(paper.tumorSuppressorMentionCount,big.mark=',')
+
 
 paper.geneDriverCount <- length(unique(cancermineSentences[cancermineSentences$role=='Driver','gene_normalized']))
 paper.geneOncogeneCount <- length(unique(cancermineSentences[cancermineSentences$role=='Oncogene','gene_normalized']))
@@ -64,7 +71,7 @@ paper.diseaseOntologyCancerCount <- prettyNum(paper.diseaseOntologyCancerCount,b
 
 roleCounts <- plyr::count(cancermineCollated[,c('role'),drop=F])
 rolePlot <- barchart(freq ~ role, 
-                     ylab="Citation #",
+                     ylab="Associations",
                      ylim=c(0,1.1*max(roleCounts$freq)),
                          roleCounts, 
                          scales=list(x=list(rot=45)),
@@ -77,7 +84,7 @@ geneCounts <- plyr::count(cancermineCollated[,c('gene_normalized'),drop=F])
 geneCounts <- geneCounts[order(geneCounts$freq,decreasing=T),]
 geneCounts$gene_normalized <- factor(as.character(geneCounts$gene_normalized), levels=as.character(geneCounts$gene_normalized))
 topCancersPlot <- barchart(freq ~ gene_normalized, 
-                           ylab="Citation #",
+                           ylab="Associations",
                            ylim=c(0,1.1*max(geneCounts$freq)),
          geneCounts[1:topCount,], 
          scales=list(x=list(rot=45)),
@@ -88,7 +95,7 @@ cancerCounts <- plyr::count(cancermineCollated[,c('cancer_normalized'),drop=F])
 cancerCounts <- cancerCounts[order(cancerCounts$freq,decreasing=T),]
 cancerCounts$cancer_normalized <- factor(as.character(cancerCounts$cancer_normalized), levels=as.character(cancerCounts$cancer_normalized))
 topGenesPlot <- barchart(freq ~ cancer_normalized, 
-                         ylab="Citation #",
+                         ylab="Associations",
                          ylim=c(0,1.1*max(cancerCounts$freq)),
          cancerCounts[1:topCount,], 
          scales=list(x=list(rot=45)),
@@ -124,7 +131,7 @@ my.settings <- list(
 )
 
 topJournalsPlot <- barchart(freq ~ journal_extra_short, 
-         ylab="Citation #",
+         ylab="Citations",
          ylim=c(0,1.1*max(journalCounts$freq)),
          topJournalAndSectionCounts, 
          scales=list(x=list(rot=45)),
@@ -148,7 +155,7 @@ citationPlot <- barchart(count ~ group,
                          citationCounts, 
                          ylim=c(0,1.1*max(citationCounts$count)),
                          xlab="Number of citations",
-                         ylab="# of cancer gene roles",
+                         ylab="Associations",
                          col="black")
 citationPlot <- arrangeGrob(citationPlot,top='(e)')
 

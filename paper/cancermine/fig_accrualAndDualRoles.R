@@ -27,7 +27,7 @@ accrualPlot <- xyplot(citation_count ~ yearMonth,
                       collatedWithFirstPub,
                       col="black",
                       xlab="First publication date",
-                      ylab="Citation count"
+                      ylab="Citations"
                       #scales=(x=list(log=10))
 )
 accrualPlot = arrangeGrob(accrualPlot,top='(a)')

@@ -3,7 +3,7 @@
 source('cancermine/dependencies.R')
 
 roleCounts <- read.table('cancermine/annotation.roleCounts.tsv', sep='\t', header=T)
-rolePlot <- barchart(count ~ role, roleCounts, col="black")
+rolePlot <- barchart(count ~ role, ylab="Annotations", xlab="Role", roleCounts, col="black")
 rolePlot <- arrangeGrob(rolePlot, top='(a)')
 
 interannotatorAgreement <- read.table('cancermine/annotation.interannotator.tsv', sep='\t', header=T, row.names=1)
