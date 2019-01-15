@@ -39,6 +39,11 @@ cancermineUnfiltered$combined <- paste(cancermineUnfiltered$role,as.character(ca
 #cancermine$inCGC <- cancermine$combined %in% cgcData$combined
 #missing <- cancermine[!cancermine$inCGC,]
 
+cgcGenes <- unique(cgcData$gene_normalized)
+cgcGenesNotInCancermine <- cgcGenes[!(cgcGenes %in% cancermine$gene_normalized)]
+
+cgcGenesRandom20 <- sort(sample(cgcGenesNotInCancermine, 20))
+
 cgcNotInCancerMine <- cgcData[!(cgcData$combined %in% cancermine$combined),]
 paper.cgcFoundInLessConservative <- length(unique(cgcNotInCancerMine$combined[cgcNotInCancerMine$combined %in% cancermineUnfiltered$combined]))
 #missing <- missing[!duplicated(missing),]

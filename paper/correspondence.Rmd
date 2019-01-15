@@ -1,0 +1,47 @@
+---
+title: Literature mining the roles of genes in cancer to enable personalized cancer treatment
+site: bookdown::bookdown_site
+documentclass: book
+output:
+  bookdown::word_document2
+bibliography: bibliography.bibtex
+csl: nature-methods.csl
+---
+
+```{r cancermineSetup, include=FALSE}
+source('cancermine/dependencies.R')
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r cancermineFigures, echo=F}
+pdf(file="sideeffects.pdf")
+source('cancermine/fig_correspondence.R')
+source('cancermine/fig_annotationAndModel.R')
+source('cancermine/fig_textminedOverview.R')
+source('cancermine/fig_time.R')
+source('cancermine/fig_accrualAndDualRoles.R')
+source('cancermine/fig_comparisons.R')
+source('cancermine/fig_clustersAndTCGA.R')
+invisible(dev.off())
+```
+
+Dear Editor: We present the CancerMine resource, a text-mined and routinely updated database of drivers, oncogenes and tumor suppressors in different types of cancer. All data is easily viewable online (http://bionlp.bcgsc.ca/cancermine) and downloadable under a Creative Commons Zero license for easy re-use. As precision medicine approaches are increasing integrated into the clinic, tumors from cancer patients are frequently genetically profiled to understand the driving forces behind their disease. To define the appropriate genomic search space in this setting, one must know which genes play important roles in the development of the corresponding cancer type. This normally requires substantial literature review. We have developed a text mining approach that identifies mentions of genes as drivers, oncogenes or tumor suppressors. This approach will be kept up-to-date with monthly releases and provides a valuable resource amenable for data analysis pipelines. Based on this data, we also provide an easy tool for identifying cancer genes from a gene list and interactive plots of cancer type clustering, which are helpful for understanding the somatic landscapes of cancer.
+
+Oncogenes are genes (either normally or in an aberrated form) that promote the development of cancer while tumor suppressors act against carcinogenesis. Drivers refer to genes that are important in cancer development and can be either oncogenes or tumor suppressors. Different methods exist to identify potential cancer related genes, including statistical analysis of mutation frequency in large genomic cohorts [@kristensen2014principles] and in-vitro studies of gene knockdowns [@zender2008oncogenomics]. Several resources have been built over time to catalog the roles of genes in cancer. The Cancer Gene Census (CGC) [@futreal2004census] uses data from COSMIC to list known oncogenes and tumor suppressors. The Network of Cancer Genes [@ciccarelli2018network] builds upon the CGC and integrates a wide variety of additional contextual data such as frequency of mutations. IntOGen [@gonzalez2013intogen] uses data from large scale sequencing projects (e.g. the Cancer Genome Atlas) to collate the importance of cancer genes. ONGene [@liu2017ongene] and TSGene [@zhao2015tsgene] list oncogenes and tumor suppressors, but do not associate them with specific cancer types. 
+
+All manually curated databases face the overwhelming curation burden of expert curator time and cost in order to stay up-to-date. Text mined databases offer an automated approach that can provide high quality results with regular updates. To enable this approach, we build on previous text mining approaches for extracting gene-disease relations [@chun2006extraction; @singhal2016text]. We extracted titles, abstracts and available full-text articles from PubMed, PubMed Central Open Access subset and PubMed Central Author Manuscript Collection. We then identified sentences that mentioned a gene name and a cancer type through named entity recognition. We manually annotated 1,500 sentences to whether they discussed drivers, oncogenes or tumor suppressors (3 annotators with mean inter-annotator agreement F1-score = 0.77). We then used the Kindred relation classifier [@lever2017painless]  that learns the characteristics of these sentences and applied it to the remaining corpora to identify `r paper.sentenceCount` sentences containing `r paper.driverMentionCount` mentions of drivers, `r paper.oncogeneMentionCount` of oncogenes and `r paper.tumorSuppressorMentionCount` of tumor suppressors.
+
+```{r correspondence, echo=F, eval=T, fig.width=15, fig.asp=0.5,  fig.cap='(ref:correspondence)'}
+grid.arrange(fig_correspondence)
+```
+
+(ref:correspondence) Our text mining approach identifies the most frequently discussed cancer genes (a) and cancer types (b). This information is valuable for reference by researchers as well as for use in automated pipelines. Using the number of papers discussing a gene role with a cancer, a profile can be created for each cancer type. These profiles can then be clustered together to help understand the overall genetic difference between cancer types (c). Colors of increasing intensity correlate with higher importance score.
+
+By aggregating the results, we find `r paper.geneCount` genes linked to `r paper.cancerCount` cancer types as drivers, oncogenes or tumor suppressors with well-established cancer genes (e.g. TP53, MYC and KRAS) having the highest number of associations (Fig 1A/B). `r paper.percMultipleCitations`% of cancer gene associations are discussed in more than one paper. The resulting knowledge base incorporates information from `r paper.pmidCount` papers. In 2017, ~`r paper.novelGeneRolesPerMonth2017` novel cancer gene associations were added on average to the literature each month. We found that overall `r paper.percFromFullText`% of mentions of cancer gene roles were found in the full text (as opposed to title or abstract). Furthermore `r paper.percOnlyInFullText`% of all cancer gene roles were only found in full text articles (Fig S\@ref(fig:time)). We compared CancerMine with the CGC and several other cancer gene-related resources (Fig S\@ref(fig:comparisons)) and found that CancerMine contains substantially more cancer gene associations than other resources. 
+
+The number of papers that discuss a gene as important for a cancer provides a metric of the importance of that gene in cancer development. Using this information we generated profiles for each cancer type.  As expected, similar cancer types cluster together (Fig 1C) providing an excellent summary of how different cancer types differ based on their genomic profiles. We then validated these profiles, specifically for tumor suppressors, using data from the Cancer Genome Atlas (TCGA). We hypothesized that likely deleterious point mutations would often target important tumor suppressors. For each TCGA sample (in seven TCGA cancer type projects), we matched it most closely with the CancerMine profile that overlapped its somatic mutations. We found that six of the seven CancerMine profiles have their highest proportion matches with the corresponding TCGA project (Fig S\@ref(fig:clustersAndTCGA)B).
+
+All data are free to view and download. We hope this will provide a valuable resource to the cancer research community and that the methods will be of interest to others working on biomedical knowledge base curation.
+
+# References
