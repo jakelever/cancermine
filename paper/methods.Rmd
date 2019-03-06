@@ -1,0 +1,61 @@
+---
+title: Methods for Literature mining the roles of genes in cancer to enable personalized cancer treatment
+site: bookdown::bookdown_site
+documentclass: book
+output:
+  bookdown::word_document2
+bibliography: bibliography.bibtex
+csl: nature-methods.csl
+---
+
+```{r cancermineSetup, include=FALSE}
+source('cancermine/dependencies.R')
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Methods {-}
+
+## Corpora Processing {-}
+
+PubMed abstracts and full-text articles from PubMed Central Open Access (PMCOA) subset and Author Manuscript Collection (PMCAMC) were downloaded from the NCBI FTP website using the PubRunner framework (paper in preparation - https://github.com/jakelever/pubrunner). They were then converted to BioC format [@comeau2013bioc] using PubRunner’s convert functionality. This strips out formatting tags and other metadata and retains the Unicode text of the title, abstract and for PMCOA, the full article. The source of the text (title, abstract, article) is also encoded.
+
+## Entity recognition {-}
+
+Lists of cancer types and gene names were built using a subset of the Disease Ontology (DO) and NCBI gene lists. These were complemented by matching to the Unified Medical Language System (UMLS). For cancer types, this was achieved using the associated ID in DO or through exact string matching on the DO item title. For gene names, the Entrez ID was used to match with UMLS IDs. The cancer type was then associated with a DO ID, and the gene names were associated with their HUGO gene name. These cancer and gene lists were then pruned with a manual list of stop-words with several custom additions for alternate spellings/acronyms of cancers. All cancer terms with less than four letters were removed except for a selected set of abbreviations, e.g. GBM for glioblastoma multiforme. The term lists are managed in the BioWordlists Github repository (https://github.com/jakelever/biowordlists).
+
+The corpus text was loaded in BioC format [@comeau2013bioc] and processed using the Kindred Python package [@lever2017painless] that, as of v2.0, uses the Spacy IO parser (described in Chapter 3). Using the tokenization, entities were identified through exact string matching against tokens. Longer entity names with more tokens were prioritized and removed from the sentence as entities were identified. Non-fusion terms, which are mentions with multiple genes symbols that actually refer to a single gene (e.g.l HER2/neu), were identified when two genes with matching HUGO IDs were attached and combined to be a single non-fusion gene entity. Genes mentioned in the context of pathways were also removed (e.g. MTOR pathway) using a list of pathway related keywords.
+
+## Sentence selection {-}
+
+After Kindred parsing, the sentences with tagged entities were searched for those containing at least one cancer type and at least one gene name. These sentences were then filtered using the terms “tumor suppress”, “oncogen” and “driv” to enrich for sentences that were likely discussing these gene roles.
+
+## Annotation {-}
+
+From the complete set, 1,600 of the sentences were then randomly selected and output into the BioNLP Shared Task format for ingestion into an online annotation platform. This platform was then used by three expert annotators who are all PhD students actively engaged in precision cancer projects. Within each sentence, the platform presents each possible pair of a gene and cancer and the user must select driver, oncogene and tumor suppressor annotations. The first 100 sentences were used to help the users understand the system, evaluate initial inter-annotator agreement, and adjust the annotation guidelines (available at the GitHub repository). The results were then discarded and the complete 1,500 sentences were annotated by the first two annotators. 379 sentences were found to contain disagreements. The third annotator then annotated the sentences that the first two disagreed on and ~400 sentences that didn't contain disagreements for more accurate inter-annotator agreement calculations. The inter-annotator agreement was calculated using the F1-score. A gold corpus was created using the majority vote of the annotations of the three annotators.
+
+## Relation extraction {-}
+
+To create a training and test split, 75% of the 1500 sentences were used as a training set and a Kindred relation classifier was trained with an underlying logistic regression model for all three gene roles (Driver, Oncogene and Tumor_Suppressor). The threshold was varied to generate the precision-recall curves with evaluation on the remaining 25% of sentences. With the selection of the optimal thresholds, a complete model was trained using all 1,500 sentences. This model was then applied to all sentences found in PubMed, PMCOA and PMCAMC that fit the sentence requirements. The associated gene and cancer type IDs were extracted, entity names were normalized and the specific sentence was extracted.
+
+We note examples that our system would be unable to extract. If the gene name or cancer name are missing from the almost exhaustive nomenclatures selected, the system cannot identify the entities and therefore no relation could be extracted. The Disease Ontology has a large list of cancer gene names, but slight variations of them may be missed. For example, a sentence discussing "lung carcinogenesis" instead of "lung cancer development" would not be tagged for an appropriate cancer entity. Some missing nomenclature can be fixed with future versions of the resource. However, substantially different wording used to describe the actual relations would require re-annotation of data and retraining of the classifier.
+
+## Web portal {-}
+
+The resulting cancer gene roles data were aggregated by the triples (gene, cancer, role) in order to count the number of citations supporting each cancer gene role. This information was then presented through tabular and chart form using a Shiny web application.
+
+## Resource comparisons {-}
+
+The data from the Cancer Gene Census (CGC), IntOGen, TS and ONGene resources were downloaded for comparison. HUGO gene IDs in CancerMine were mapped to Entrez gene IDs. CGC data was mapped to Disease Ontology cancer types using a combination of the cancer synonym list created for CancerMine and manual curation. Oncogenes and tumor suppressors were extracted using the presence of "oncogene" or "TSG" in the "Role in Cancer" column. The mapped CGC data was then compared against the set of oncogenes and tumor suppressors in CancerMine. IntOGen cancer types were manually mapped to corresponding Disease Ontology cancer types and compared against all of CancerMine. The TSGene and ONGene gene sets were compared against the CancerMine gene sets without an associated cancer type.
+
+## CancerMine profiles and TCGA analysis {-}
+
+The number of papers that relate a gene role (e.g. RUNX3 as a tumor suppressor) to a cancer type (e.g. stomach cancer) is used as a metric of importance for that gene role in the cancer type. The paper number is log-10 transformed and divided by the largest value for that specific cancer type. This normalizes for the cancer type as many more papers discuss breast cancer than basal cell carcinoma. For each cancer type, we then have a set of importance values (a CancerMine profile) for every gene role, with the most important having a value of 1 and all other having lower values. The top `r paper.clusteringTopCancerCount` cancer types were then selected and the top `r paper.clusteringTopGeneRoleCount` gene roles identified for them. These profiles were then hierarchically clustered to generate a heatmap using heatmaply [@heatmaply].
+
+The open-access VarScan somatic mutation calls for the seven TCGA projects (BRCA,COAD,LIHC,PRAD,LGG,LUAD,STAD) were downloaded from the GDC Data Portal (https://portal.gdc.cancer.gov). They were filtered for mutations that contained a stop gain or were classified as probably damaging or deleterious by PolyPhen. Tumor suppressor specific CancerMine profiles were generated that used all tumor suppressors for each cancer type. The citation counts were again log10-transformed and rescaled to produce the CancerMine tumor suppressor profile. Each TCGA sample was represented as a binary vector matching the filtered mutations. The dot-product of a sample vector and a CancerMine profile vector produced the sum of citation weightings and gave the score. For each sample, the score was calculated for all seven cancer types and the highest score was used to label the sample. A sample that did not contain tumor suppressor mutations associated with any of the seven profiles or could not be labeled unambiguously was labeled as 'none'.
+
+## Online Access and Updates
+
+A bioinformatics resource is only valuable if it is kept up-to-date. This is very apparent in this area as several previous knowledge bases that relate to this area have fallen into disrepair and are no longer accessible. To make sure that this project has a long life, we have taken three key steps. Firstly, all code is publically available and hosted on GitHub (https://github.com/jakelever/cancermine), as well as recorded in the Zenodo repository. Secondly, all data is stored in the Zenodo repository (https://doi.org/10.5281/zenodo.1156241) under a Creative Commons Zero license. This repository will guarantee the future of the data for this project. Thirdly, and most importantly, we have developed a software framework (PubRunner) to make it easier to keep text-mined resources up-to-date. It manages the challenging tasks of downloading the latest publication data, converting formats, executing tools on a cluster and uploading data as required. A publication is forthcoming.
+
+The February 2019 CancerMine release was used for this analysis (https://doi.org/10.5281/zenodo.2557358).
+
