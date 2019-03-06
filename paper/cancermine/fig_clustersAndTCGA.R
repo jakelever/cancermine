@@ -53,7 +53,7 @@ topCancers <- cancerCounts[1:paper.clusteringTopCancerCount,'cancer_normalized']
 clusterHeatmapData <- selectDataForHeatmap(cancermineProfiles,topCancers,paper.clusteringTopGeneRoleCount)
 
 #fig_profiles <- plotHeatmapWithDendro(clusterHeatmapData)
-#heatmaply(clusterHeatmapData,file='test.jpeg')
+#heatmaply(clusterHeatmapData)#,file='test.jpeg')
 img <- readPNG("clustering.png")
 fig_profiles <- rasterGrob(img, interpolate=TRUE)
 fig_profiles <- arrangeGrob(fig_profiles,top='(a)')
@@ -90,6 +90,7 @@ fig_tcga <- ggplot(tcgaProfiles.melted, aes(tcga,profile)) +
         panel.grid.major=element_blank(),
         panel.grid.minor=element_blank(),
         plot.background=element_blank())
+fig_tcgaWithoutHeader <- fig_tcga
 fig_tcga = arrangeGrob(fig_tcga,top='(b)')
 grid.arrange(fig_tcga)
 

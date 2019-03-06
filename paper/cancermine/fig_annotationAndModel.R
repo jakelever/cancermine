@@ -78,6 +78,18 @@ paper.lenient_ts_recall <- data[data$threshold==0.5 & data$role=='Tumor_Suppress
 paper.lenient_avg_precision <- round(mean(c(paper.lenient_driver_precision,paper.lenient_oncogene_precision,paper.lenient_ts_precision)),1)
 paper.lenient_avg_recall <- round(mean(c(paper.lenient_driver_recall,paper.lenient_oncogene_recall,paper.lenient_ts_recall)),1)
 
+perfTable <- selectedThresholds
+perfTable <- merge(perfTable,data,by=c('threshold','role'))
+perfTable <- perfTable[,c('role','threshold','precision','recall')]
+
+paper.avg_recall <- round(100*mean(perfTable$recall),1)
+paper.avg_precision <- round(100*mean(perfTable$precision),1)
+
+neededPapers <- data.table(number=1:10)
+neededPapers$chanceOfExtraction <- 1- (1-paper.avg_recall/100) ^ neededPapers$number
+
+paper.minPapersNeeded <- as.list(neededPapers[neededPapers$chanceOfExtraction>=0.9,'number'])$number[1]
+
 #data <- data[order(data$precision),]
 #data[data$precision>0.85,]
 

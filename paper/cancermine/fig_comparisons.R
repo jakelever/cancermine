@@ -67,7 +67,7 @@ cgcPlot <- venn.diagram(
   cat.pos = 0,
   filename=NULL)
 cgcPlot <- gTree(children=cgcPlot)
-cgcPlot <- grid.arrange(cgcPlot,top='(a)')
+#cgcPlot <- grid.arrange(cgcPlot,top='(a)')
 
 
 
@@ -161,7 +161,7 @@ intogenPlot <- venn.diagram(
   cat.pos = 0,
   filename=NULL)
 intogenPlot <- gTree(children=intogenPlot)
-intogenPlot <- grid.arrange(intogenPlot,top='(b)')
+#intogenPlot <- grid.arrange(intogenPlot,top='(b)')
 
 paper.moreGenesThanIntogen <- length(setdiff(unique(cancermine$gene_normalized),unique(intogen2014$geneHGNCsymbol)))
 paper.moreGenesThanIntogen <- prettyNum(paper.moreGenesThanIntogen,big.mark=',')
@@ -181,7 +181,7 @@ tsgenePlot <- venn.diagram(
   cat.pos = 0,
   filename=NULL)
 tsgenePlot <- gTree(children=tsgenePlot)
-tsgenePlot <- grid.arrange(tsgenePlot,top='(c)')
+#tsgenePlot <- grid.arrange(tsgenePlot,top='(c)')
 
 paper.tsgeneCount <- length(unique(tsgeneData$GeneID))
 paper.tsgeneOverlapCount <- sum(unique(tsgeneData$GeneID) %in% unique(cancermineTSIDs$gene_entrez_id))
@@ -199,7 +199,7 @@ ongenePlot <- venn.diagram(
   cat.pos = 0,
   filename=NULL)
 ongenePlot <- gTree(children=ongenePlot)
-ongenePlot <- grid.arrange(ongenePlot,top='(d)')
+#ongenePlot <- grid.arrange(ongenePlot,top='(d)')
 
 paper.ongeneCount <- length(unique(ongeneData$OncogeneID))
 paper.ongeneOverlapCount <- sum(unique(ongeneData$OncogeneID) %in% unique(cancermineOncogeneIDs$gene_entrez_id))
@@ -217,7 +217,7 @@ civicPlot <- venn.diagram(
   cat.pos = 0,
   filename=NULL)
 civicPlot <- gTree(children=civicPlot)
-civicPlot <- grid.arrange(civicPlot,top='(e)')
+#civicPlot <- grid.arrange(civicPlot,top='(e)')
 
 paper.civicCount <- length(unique(civicDB$entrez_id))
 paper.civicOverlapCount <- sum(unique(civicDB$entrez_id) %in% unique(cancermine$gene_entrez_id))
@@ -227,7 +227,7 @@ paper.civicOverlapPerc <- round(100.0 * paper.civicOverlapCount / paper.civicCou
 
 
 
-fig_comparisons <- arrangeGrob(cgcPlot,intogenPlot,tsgenePlot,ongenePlot, civicPlot, ncol=2)
+fig_comparisons <- arrangeGrob(cgcPlot,intogenPlot,tsgenePlot,ongenePlot, civicPlot, ncol=3)
 
 grid.arrange(fig_comparisons)
 

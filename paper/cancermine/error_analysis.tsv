@@ -1,0 +1,5 @@
+	Driver	Oncogene	Tumor Suppressor	negative
+Driver	10	0	0	25
+Oncogene	0	52	0	97
+Tumor Suppressor	0	0	39	112
+negative	1	8	6	509

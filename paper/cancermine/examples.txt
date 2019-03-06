@@ -1,0 +1,8 @@
+Association Type	PubMed ID	Sentence
+Oncogene	3457468	This work suggests that Hu-ets-1 is an unusual oncogene that can help explain the common involvement of chromosome band 11q23 in various subtypes of hematopoietic malignancies.
+Oncogene	29440180	Although MNX1  functions as an oncogene to promote pancreatic islet cell tumors in multiple endocrine neoplasia type 1 (MEN1)  , this particular mutation is common in the population and unlikely to be relevant to predisposition.
+Oncogene and Tumor Suppressor	30344933	Indeed, Gadd45a behaves as a tumor suppressor in H-RAS driven models of breast cancer and as an oncogene in Myc-driven tumors  .
+Driver	24584072	The MYC  oncogene is an established driver in T-ALL and a canonical BRD4 target .
+Driver	27792127	RIN1  was identified as a breast cancer tumor suppressor gene  .
+Tumor Suppressor	29805611	Hence, RUNX3 may serve as a tumor suppressor gene in cervical cancer.
+Tumor Suppressor	26364604	We showed that LZTFL1 could function as a tumor suppressor in gastric cancers  and suppresses gastric cancer cell migration and invasion through regulating nuclear translocation of β-catenin, indicating a WNT pathway connection.

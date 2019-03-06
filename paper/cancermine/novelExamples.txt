@@ -1,0 +1,13 @@
+Is Novel?	Section in Paper	Role	Gene	Cancer	PubMed ID	Sentence
+TRUE	introduction	Driver	MYO18A	prostate cancer	28942352	7.3 <b>MYO18A</b> Drives Migration of <b>Prostate Cancer</b> Cells
+TRUE	introduction	Oncogene	MYCN	lung oat cell carcinoma	28621319	We recently reported that enforced expression of <b>N-Myc</b> and activated AKT1 drives benign human prostate epithelial cells to <b>small cell neuroendocrine carcinoma</b> and FOXA2 expression was uniformly identified in these tumors  .
+FALSE	introduction	Driver	EGFR	glioblastoma multiforme	28892308	Here, we provide our perspective on these issues and discuss recently emerged new angles to tackle hyperactive <b>EGFR</b>-driven <b>GBM</b>.
+FALSE	introduction	Driver	CDKN2A	melanoma	28703311	Recent work indicates that UV-induced mutations accumulate as melanocytic nevi transform into <b>melanoma</b>, including driver mutations in <b>CDKN2A</b>, TP53, NF1, RAC1, and PTEN .
+TRUE	results	Oncogene	NFIB	colorectal cancer	30320939	Taken together, the results showed that <b>NFIB</b> played a role as an oncogene in <b>CRC</b> by promoting CRC cell proliferation, migration and 5-FU resistance.
+TRUE	results	Oncogene	KIFC1	hepatocellular carcinoma	30115976	These data indicate that <b>KIFC1</b> has an oncogenic function and promotes <b>HCC</b> development in vitro and in vivo.
+FALSE	results	Tumor_Suppressor	PTEN	prostate cancer	29180472	Examples include deletions of 10q23, a region which encompasses <b>PTEN</b> (a tumor suppressor gene) and is frequently lost in <b>prostate cancer</b>, in cases NYU001.GS7.1 and NYU010.GS7.3, but only in their respective clone and subclone NYU001.GS7.1.1 and NYU010.GS7.3.1.1.
+FALSE	results	Tumor_Suppressor	NF1	melanoma	29133622	One gene that was frequently mutated in the BRAF/NRAS -WT <b>melanoma</b> cell lines was the tumor suppressor <b>NF1</b> .
+TRUE	discussion	Tumor_Suppressor	EGLN1	glioblastoma multiforme	30082910	We suspect that the upregulation of FIH1 and <b>PHD2</b> will act as a tumor suppressor in <b>GBM</b> under normoxia; this may be the mechanism for ANKDD1A biological effects in normoxia.
+TRUE	discussion	Oncogene	TLL2	melanoma	28796414	Therefore, we propose that <b>TLL2</b>  may function as an oncogene to influence the <b>melanoma</b> progression.
+FALSE	discussion	Tumor_Suppressor	PTRH2	non-small cell lung carcinoma	29170133	Indeed, several lines of evidence exist in support of <b>Bit1</b> as a putative tumor suppressor in <b>NSCLC</b>:
+FALSE	discussion	Oncogene	YAP1	hepatocellular carcinoma	29142068	Previous studies have suggested that menin function in liver tumorigenesis is associated with transcriptional activation of <b>YAP1</b> , an important oncogene in <b>HCC</b>  .

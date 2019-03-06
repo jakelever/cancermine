@@ -17,19 +17,19 @@ notnovelYearCounts$novel <- 'Not Novel'
 
 novelAndNotNovelYearCounts <- rbind(novelYearCounts,notnovelYearCounts)
 novelAndNotNovelYearCounts$yearTxt <- as.character(novelAndNotNovelYearCounts$year)
-novelAndNotNovelYearCounts <- novelAndNotNovelYearCounts[novelAndNotNovelYearCounts$year<2018,]
+novelAndNotNovelYearCounts <- novelAndNotNovelYearCounts[novelAndNotNovelYearCounts$year<2019,]
 
-novelNotNovel2017 <- novelAndNotNovelYearCounts[novelAndNotNovelYearCounts$year==2017,]
-novel2017 <- novelNotNovel2017[novelNotNovel2017$novel=='Novel','freq']
-notnovel2017 <- novelNotNovel2017[novelNotNovel2017$novel=='Not Novel','freq']
+novelNotNovel2018 <- novelAndNotNovelYearCounts[novelAndNotNovelYearCounts$year==2018,]
+novel2018 <- novelNotNovel2018[novelNotNovel2018$novel=='Novel','freq']
+notnovel2018 <- novelNotNovel2018[novelNotNovel2018$novel=='Not Novel','freq']
 
-paper.notnovel2017Perc = round(100*notnovel2017/(novel2017+notnovel2017))
-paper.novel2017Perc = round(100*novel2017/(novel2017+notnovel2017))
+paper.notnovel2018Perc = round(100*notnovel2018/(novel2018+notnovel2018))
+paper.novel2018Perc = round(100*novel2018/(novel2018+notnovel2018))
 
-paper.rolesIn2017 <- sum(novelAndNotNovelYearCounts[novelAndNotNovelYearCounts$year==2017,'freq'])
-paper.avgRolesPerMonth <- round(sum(novelAndNotNovelYearCounts[novelAndNotNovelYearCounts$year==2017,'freq'])/12)
-paper.avgNovelRolesPerMonth <- round(sum(novel2017/12))
-paper.rolesIn2017 <- prettyNum(paper.rolesIn2017,big.mark=',')
+paper.rolesIn2018 <- sum(novelAndNotNovelYearCounts[novelAndNotNovelYearCounts$year==2018,'freq'])
+paper.avgRolesPerMonth <- round(sum(novelAndNotNovelYearCounts[novelAndNotNovelYearCounts$year==2018,'freq'])/12)
+paper.avgNovelRolesPerMonth <- round(sum(novel2018/12))
+paper.rolesIn2018 <- prettyNum(paper.rolesIn2018,big.mark=',')
 
 myColours <- brewer.pal(7,"Spectral")
 myColours <- c(myColours[1],myColours[length(myColours)])
@@ -69,7 +69,7 @@ article$section <- 'Article'
 
 sectionData <- rbind(title,abstract,article)
 sectionData$yearTxt <- as.character(sectionData$year)
-sectionData <- sectionData[sectionData$year<2018,]
+sectionData <- sectionData[sectionData$year<2019,]
 
 myColours <- brewer.pal(3,"Spectral")
 my.settings <- list(
@@ -91,13 +91,14 @@ sectionPlot <- barchart(freq ~ yearTxt,
                      scales=list(x=list(rot=45,labels=labels)),
                      stack=T,
                      horizontal=F)
+sectionPlotWithoutHeader <- sectionPlot
 sectionPlot = arrangeGrob(sectionPlot,top='(c)')
 grid.arrange(sectionPlot)
 
-paper.novelGeneRolesPerMonth2017 <- round(nrow(cancermineSentences[cancermineSentences$isNovel & cancermineSentences$year==2017,]) / 12)
-paper.novelDriverPerMonth2017 <- round(nrow(cancermineSentences[cancermineSentences$isNovel & cancermineSentences$role=='Driver' & cancermineSentences$year==2017,]) / 12)
-paper.novelOncogenePerMonth2017 <- round(nrow(cancermineSentences[cancermineSentences$isNovel & cancermineSentences$role=='Oncogene' & cancermineSentences$year==2017,]) / 12)
-paper.novelTumorSuppressorPerMonth2017 <- round(nrow(cancermineSentences[cancermineSentences$isNovel & cancermineSentences$role=='Tumor_Suppressor' & cancermineSentences$year==2017,]) / 12)
+paper.novelGeneRolesPerMonth2018 <- round(nrow(cancermineSentences[cancermineSentences$isNovel & cancermineSentences$year==2018,]) / 12)
+paper.novelDriverPerMonth2018 <- round(nrow(cancermineSentences[cancermineSentences$isNovel & cancermineSentences$role=='Driver' & cancermineSentences$year==2018,]) / 12)
+paper.novelOncogenePerMonth2018 <- round(nrow(cancermineSentences[cancermineSentences$isNovel & cancermineSentences$role=='Oncogene' & cancermineSentences$year==2018,]) / 12)
+paper.novelTumorSuppressorPerMonth2018 <- round(nrow(cancermineSentences[cancermineSentences$isNovel & cancermineSentences$role=='Tumor_Suppressor' & cancermineSentences$year==2018,]) / 12)
 
 driver <- plyr::count(cancermineSentences[cancermineSentences$role=='Driver',c('year'),drop=F])
 driver$role <- 'Driver'
@@ -108,20 +109,20 @@ tumor_suppressor$role <- 'Tumor Suppressor'
 
 roleData <- rbind(driver,oncogene,tumor_suppressor)
 roleData$yearTxt <- as.character(roleData$year)
-roleData <- roleData[roleData$year<2018,]
+roleData <- roleData[roleData$year<2019,]
 
-paper.driver2017 <- roleData[roleData$year==2017 & roleData$role=='Driver','freq']
-paper.oncogene2017 <- roleData[roleData$year==2017 & roleData$role=='Oncogene','freq']
-paper.tumorsuppressor2017 <- roleData[roleData$year==2017 & roleData$role=='Tumor Suppressor','freq']
+paper.driver2018 <- roleData[roleData$year==2018 & roleData$role=='Driver','freq']
+paper.oncogene2018 <- roleData[roleData$year==2018 & roleData$role=='Oncogene','freq']
+paper.tumorsuppressor2018 <- roleData[roleData$year==2018 & roleData$role=='Tumor Suppressor','freq']
 
 
-#paper.driverPerMonth <- round(paper.driver2017/12)
-#paper.oncogenePerMonth <- round(paper.oncogene2017/12)
-#paper.tumorsuppressorPerMonth <- round(paper.tumorsuppressor2017/12)
+#paper.driverPerMonth <- round(paper.driver2018/12)
+#paper.oncogenePerMonth <- round(paper.oncogene2018/12)
+#paper.tumorsuppressorPerMonth <- round(paper.tumorsuppressor2018/12)
 
-paper.driver2017 <- prettyNum(paper.driver2017,big.mark=',')
-paper.oncogene2017 <- prettyNum(paper.oncogene2017,big.mark=',')
-paper.tumorsuppressor2017 <- prettyNum(paper.tumorsuppressor2017,big.mark=',')
+paper.driver2018 <- prettyNum(paper.driver2018,big.mark=',')
+paper.oncogene2018 <- prettyNum(paper.oncogene2018,big.mark=',')
+paper.tumorsuppressor2018 <- prettyNum(paper.tumorsuppressor2018,big.mark=',')
 
 myColours <- brewer.pal(3,"Spectral")
 my.settings <- list(
@@ -185,7 +186,21 @@ subsectionPlot <- barchart(freq ~ subsection,
                            ylab="Mentions",
                            scales=list(x=list(rot=45)),
                            col="black")
+subsectionPlotWithoutHeader <- subsectionPlot
 subsectionPlot <- arrangeGrob(subsectionPlot,top='(d)')
+
+
+subsectionCountsWithNovelty <- plyr::count(cancermineSentences[cancermineSentences$section=='article',c('subsection','isNovel'),drop=F])
+subsectionCountsWithNovelty$isNovelTxt <- revalue(as.character(subsectionCountsWithNovelty$isNovel),c('FALSE'='Not Novel','TRUE'='Novel'))
+subsectionPlotWithNovelty <- barchart(freq ~ subsection, 
+         subsectionCountsWithNovelty,
+         groups=isNovelTxt,
+         auto.key=list(space="top", columns=2, 
+                       points=FALSE, rectangles=TRUE),
+         xlab="Section of paper",
+         ylab="Mentions",
+         ylim=c(0,1.1*max(subsectionCountsWithNovelty$freq)),
+         scales=list(x=list(rot=45)))
 
 
 
@@ -199,7 +214,7 @@ genesAndYears <- genesAndYears[!duplicated(genesAndYears),]
 
 uniqueGenesByYear <- plyr::count(genesAndYears[,c('year'),drop=F])
 uniqueGenesByYear$yearTxt <- as.character(uniqueGenesByYear$year)
-uniqueGenesByYear <- uniqueGenesByYear[uniqueGenesByYear$year<2018,]
+uniqueGenesByYear <- uniqueGenesByYear[uniqueGenesByYear$year<2019,]
 
 uniqueGenesPlot <- barchart(freq ~ yearTxt, 
                      uniqueGenesByYear,
@@ -216,7 +231,7 @@ cancersAndYears <- cancersAndYears[!duplicated(cancersAndYears),]
 
 uniqueCancersByYear <- plyr::count(cancersAndYears[,c('year'),drop=F])
 uniqueCancersByYear$yearTxt <- as.character(uniqueCancersByYear$year)
-uniqueCancersByYear <- uniqueCancersByYear[uniqueCancersByYear$year<2018,]
+uniqueCancersByYear <- uniqueCancersByYear[uniqueCancersByYear$year<2019,]
 
 uniqueCancersPlot <- barchart(freq ~ yearTxt, 
                             uniqueCancersByYear,

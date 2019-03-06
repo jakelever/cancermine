@@ -21,160 +21,141 @@ source('cancermine/fig_textminedOverview.R')
 source('cancermine/fig_time.R')
 source('cancermine/fig_accrualAndDualRoles.R')
 source('cancermine/fig_comparisons.R')
+source('cancermine/fig_comparisons_lowthreshold.R')
 source('cancermine/fig_clustersAndTCGA.R')
 invisible(dev.off())
 ```
 
-# Methods {-}
+```{r suptab_filterterms, echo=F, eval=T}
+filtertermsTable <- data.frame(Term=c('tumor suppress','oncogen','driv'))
 
-## Corpora Processing {-}
+suppressWarnings(filtertermsTable %>%
+  knitr::kable(
+    booktabs = TRUE, escape=FALSE,
+    caption = 'Filter terms to identify sentences that are more likely to discuss the role of a gene in a cancer.',
+    col.names = c('Filter Term')
+    ) %>%
+  kable_styling())
 
-PubMed abstracts and full-text articles from PubMed Central Open Access (PMCOA) subset and Author Manuscript Collection (PMCAMC) were downloaded from the NCBI FTP website using the PubRunner framework (paper in preparation - https://github.com/jakelever/pubrunner). They were then converted to BioC format [@comeau2013bioc] using PubRunner’s convert functionality. This strips out formatting tags and other metadata and retains the Unicode text of the title, abstract and for PMCOA, the full article. The source of the text (title, abstract, article) is also encoded.
-
-## Entity recognition {-}
-
-Lists of cancer types and gene names were built using a subset of the Disease Ontology (DO) and NCBI gene lists. These were complemented by matching to the Unified Medical Language System (UMLS). For cancer types, this was achieved using the associated ID in DO or through exact string matching on the DO item title. For gene names, the Entrez ID was used to match with UMLS IDs. The cancer type was then associated with a DO ID, and the gene names were associated with their HUGO gene name. These cancer and gene lists were then pruned with a manual list of stop-words with several custom additions for alternate spellings/acronyms of cancers. All cancer terms with less than four letters were removed except for a selected set of abbreviations, e.g. GBM for glioblastoma multiforme.
-
-The corpus text was loaded in BioC format [@comeau2013bioc] and processed using the Kindred Python package [@lever2017painless] that, as of v2.0, uses the Spacy IO parser (described in Chapter 3). Using the tokenization, entities were identified through exact string matching against tokens. Longer entity names with more tokens were prioritized and removed from the sentence as entities were identified. Fusion terms (e.g. BCR-ABL1) were identified by finding gene names separated by a hyphen or slash. Non-fusions, which are mentions with multiple genes symbols that actually refer to a single gene (e.g.l HER2/neu), were then identified when two genes with matching HUGO IDs were attached and combined to be a single non-fusion gene entity. Genes mentioned in the context of pathways were also removed (e.g. MTOR pathway) using a list of pathway related keywords.
-
-## Sentence selection {-}
-
-After Kindred parsing, the sentences with tagged entities were searched for those containing at least one cancer type and at least one gene name. These sentences were then filtered using the terms “tumor suppress”, “oncogen” and “driv” to enrich for sentences that were likely discussing these gene roles.
-
-## Annotation {-}
-
-From the complete set, 1,600 of the sentences were then randomly selected and output into the BioNLP Shared Task format for ingestion into an online annotation platform. This platform was then used by three expert annotators who are all PhD students actively engaged in precision cancer projects. Within each sentence, the platform presents each possible pair of a gene and cancer and the user must annotate this as driving, oncogene and tumor suppressor. The first 100 sentences were used to help the users understand the system, evaluate initial inter-annotator agreement, and adjust the annotation guidelines (available at the GitHub repository). The results were then discarded and the complete 1,500 sentences were annotated by the first two annotators. 379 sentences were found to contain disagreements. The third annotator then annotated the sentences that the first two disagreed on. The inter-annotator agreement was calculated using the F1-score. A gold corpus was created using the majority vote of the annotations of the three annotators.
-
-## Relation extraction {-}
-
-To create a training and test split, 75% of the 1500 sentences were used as a training set and a Kindred relation classifier was trained with an underlying logistic regression model for all three gene roles (Driver, Oncogene and Tumor_Suppressor). The threshold was varied to generate the precision-recall curves with evaluation on the remaining 25% of sentences. With the selection of the optimal thresholds, a complete model was trained using all 1,500 sentences. This model was then applied to all sentences found in PubMed, PMCOA and PMCAMC that fit the sentence requirements. The associated gene and cancer type IDs were extracted, entity names were normalized and the specific sentence was extracted.
+```
 
 
-```{r erroranalysis, echo=F, eval=T}
+
+
+```{r suptab_interannotator, echo=F, eval=T}
+interannotatorAgreement <- read.table('cancermine/annotation.interannotator.tsv', sep='\t', header=T, row.names=1)
+interannotatorAgreement <- round(interannotatorAgreement,3)
+rownames(interannotatorAgreement) <- c('Annotator 1','Annotator 2','Annotator 3')
+colnames(interannotatorAgreement) <- c('Annotator 1','Annotator 2','Annotator 3')
+
+suppressWarnings(interannotatorAgreement %>%
+  knitr::kable(
+    booktabs = TRUE, escape=FALSE,
+    caption = 'Annotation agreement between the three annotators measured by F1-score.'
+    ) %>%
+  kable_styling())
+
+```
+
+```{r suptab_examples, echo=F, eval=T}
+exampleSentences <- read.table('cancermine/examples.txt', sep='\t', header=T)
+
+suppressWarnings(exampleSentences %>%
+  knitr::kable(
+    booktabs = TRUE, escape=FALSE,
+    caption = 'Examples of sentences that contain mentions of drivers, oncogenes or tumor suppressors and should be extracted by the CancerMine system.',
+    col.names = c('Association Type','PubMed ID','Sentence')
+    ) %>%
+  kable_styling())
+
+```
+
+
+```{r suptab_performance, echo=F, eval=T}
+perfTableRounded <- perfTable
+perfTableRounded$precision <- round(perfTableRounded$precision,3)
+perfTableRounded$recall <- round(perfTableRounded$recall,3)
+suppressWarnings(perfTableRounded %>%
+  knitr::kable(
+    booktabs = TRUE, escape=FALSE,
+    caption = 'The thresholds and associated performance statistics for the three cancer-gene association types based on cross-validation.',
+    col.names = c('Association Type','Threshold','Precision','Recall')
+    ) %>%
+  kable_styling())
+
+```
+
+```{r suptab_erroranalysis, echo=F, eval=T}
 erroranalysis <- read.table('cancermine/error_analysis.tsv',header=T,sep='\t', stringsAsFactors=F)
 
 suppressWarnings(erroranalysis %>%
   knitr::kable(
     booktabs = TRUE, escape=FALSE,
-    caption = 'Error analysis of the relations in the test set. This shows a confusion matrix of actual test data (down left) and their predictions (across top).',
+    caption = 'Error analysis of the relations in the test set. This shows a confusion matrix of actual test data (down left) and their predictions (across top). There is no cross-classification where a relation is mislabelled as another type of association. The only errors are from the expected false negatives.',
     col.names = c('','Driver','Oncogene','Tumor Suppressor','negative')
     ) %>%
   kable_styling())
 ```
 
-In order to better understand the behavior of the classifier, we looked at the confusion matrix of the test data. Table \@ref(tab:erroranalysis) shows that none of the gene role types were misclassified as another type. All mistakes were either missing predictions (false negatives) or predictions that should have been predicted as negative (false positives). We can also see the small number of false positives with the trade off of the larger proportion of false negatives. After manual inspection, no obvious systematic bias was identified in the misclassified relations.
+```{r suptab_novelexamples, echo=F, eval=T}
+exampleSentences <- read.table('cancermine/novelExamples.txt', sep='\t', header=T)
 
-We note examples that our system would be unable to extract. If the gene name or cancer name are missing from the almost exhaustive nomenclatures selected, the system cannot identify the entities and therefore no relation could be extracted. The Disease Ontology has a large list of cancer gene names, but slight variations of them may be missed. For example, a sentence discussing "lung carcinogenesis" instead of "lung cancer development" would not be tagged for an appropriate cancer entity. Some missing nomenclature can be fixed with future versions of the resource. However, substantially different wording used to describe the actual relations would require re-annotation of data and retraining of the classifier.
+suppressWarnings(exampleSentences %>%
+  knitr::kable(
+    booktabs = TRUE, escape=FALSE,
+    caption = 'Examples of sentences that are found to be novel and not novel that are extracted from different sections of the paper. Frequently, the mentions in Introductions discuss previous work, while the mentions in the Results reflect on the results of this paper and not previous papers. However, sometimes mentions are not found and are not correctly identified as novel.',
+    col.names = c('Is Novel?','Section in Paper','Role','Gene','Cancer','PubMed ID','Sentence')
+    ) %>%
+  kable_styling())
 
-## Web portal {-}
-
-The resulting cancer gene roles data were aggregated by the triples (gene, cancer, role) in order to count the number of citations supporting each cancer gene role. This information was then presented through tabular and chart form using a Shiny web application.
-
-## Resource comparisons {-}
-
-The data from the Cancer Gene Census (CGC), IntOGen, TS and ONGene resources were downloaded for comparison. HUGO gene IDs in CancerMine were mapped to Entrez gene IDs. CGC data was mapped to Disease Ontology cancer types using a combination of the cancer synonym list created for CancerMine and manual curation. Oncogenes and tumor suppressors were extracted using the presence of "oncogene" or "TSG" in the "Role in Cancer" column. The mapped CGC data was then compared against the set of oncogenes and tumor suppressors in CancerMine. IntOGen cancer types were manually mapped to corresponding Disease Ontology cancer types and compared against all of CancerMine. The TSGene and ONGene gene sets were compared against the CancerMine gene sets without an associated cancer type.
-
-## CancerMine profiles and TCGA analysis {-}
-
-The number of papers that relate a gene role (e.g. RUNX3 as a tumor suppressor) to a cancer type (e.g. stomach cancer) is used as a metric of importance for that gene role in the cancer type. The paper number is log-10 transformed and divided by the largest value for that specific cancer type. This normalizes for the cancer type as many more papers discuss breast cancer than basal cell carcinoma. For each cancer type, we then have a set of importance values (a CancerMine profile) for every gene role, with the most important having a value of 1 and all other having lower values. The top `r paper.clusteringTopCancerCount` cancer types were then selected and the top `r paper.clusteringTopGeneRoleCount` gene roles identified for them. These profiles were then hierarchically clustered to generate a heatmap using heatmaply [@heatmaply].
-
-The open-access VarScan somatic mutation calls for the seven TCGA projects (BRCA,COAD,LIHC,PRAD,LGG,LUAD,STAD) were downloaded from the GDC Data Portal (https://portal.gdc.cancer.gov). They were filtered for mutations that contained a stop gain or were classified as probably damaging or deleterious by PolyPhen. Tumor suppressor specific CancerMine profiles were generated that used all tumor suppressors for each cancer type. The citation counts were again log10-transformed and rescaled to produce the CancerMine tumor suppressor profile. Each TCGA sample was represented as a binary vector matching the filtered mutations. The dot-product of a sample vector and a CancerMine profile vector produced the sum of citation weightings and gave the score. For each sample, the score was calculated for all seven cancer types and the highest score was used to label the sample. A sample that did not contain tumor suppressor mutations associated with any of the seven profiles or could not be labeled unambiguously was labeled as 'none'.
-
-## Updates
-
-A bioinformatics resource is only valuable if it is kept up-to-date. This is very apparent in this area as several previous knowledge bases that relate to this area have fallen into disrepair and are no longer accessible. To make sure that this project has a long life, we have taken three key steps. Firstly, all code is publically available and hosted on GitHub, as well as recorded in the Zenodo repository. Secondly, all data is stored in the Zenodo repository under a Creative Commons Zero license. This repository will guarantee the future of the data for this project. Thirdly, and most importantly, we have developed a software framework (PubRunner) to make it easier to keep text-mined resources up-to-date. It manages the challenging tasks of downloading the latest publication data, converting formats, executing tools on a cluster and uploading data as required. A publication is forthcoming.
-
-# Results {-}
-
-## Role of `r paper.geneCount` unique genes catalogued in `r paper.cancerCount` cancer types {-}
-
-```{r annotationAndModel, echo=F, eval=T, fig.width=9, fig.asp=1.0,  fig.cap='(ref:annotationAndModel)'}
-grid.arrange(fig_annotationAndModel)
 ```
 
-(ref:annotationAndModel) The supervised learning approach of CancerMine involves manual annotation by experts of sentences discussing cancer gene roles. Machine learning models are then trained and evaluated using this data set. (a) Manual text annotation of 1,500 randomly selected sentences containing genes and cancer types show a similar number of Oncogene and Tumor Suppressor annotations. (b) The inter-annotator agreement (measured using F1-score) was high between three expert annotators. (c) The precision recall curves show the trade-off of false positives versus false negatives. (d) Plotting the precision-recall data in relation to the threshold applied to the classifier’s decision function provides a way to select a high-precision threshold.
 
-The entire PubMed, PubMed Central Open Access subset (PMCOA) and PubMed Central Author Manuscript Collection (PMCAMC) corpora were processed to identify sentences that discuss a gene and cancer types within titles, abstracts and where accessible full text articles. By filtering for a customized set of keywords, these sentences were enriched for those likely discussing the genes’ role and 1,500 randomly selected sentences were manually annotated by three expert annotators. Using a custom web interface and a well-defined annotation manual, the annotators tagged sentences that discussed one of three gene roles (driver, oncogene and tumor suppresser) with a mentioned type of cancer (Fig S\@ref(fig:annotationAndModel)A). An example of a simple relation that was annotated as "Tumor Suppressor" annotation is: "DBC2 is a tumor suppressor gene linked to breast and lung cancers" (PMID: 17023000). A more complex example illustrates a negative relation: "KRAS mutations are frequent drivers of acquired resistance to cetuximab in colorectal cancers" (PMID:24065096). In this case,  the KRAS mutations are drivers of drug resistance, and not of cancer development as required for annotation of driver relations.
+```{r suptab_dualroles, echo=F, eval=T}
+dualRoleTable <- as.data.frame(genesThatAreBothWithCancerTypes)
+#dualRoleTable$gene <- as.character(dualRoleTable$gene)
+#dualRoleTable$oncogenic <- factor(genesThatAreBothWithCancerTypes$oncogenic)
+#dualRoleTable$tumorSuppressive <- factor(genesThatAreBothWithCancerTypes$tumorSuppressive)
+#dualRoleTable <- dualRoleTable[,c('gene','oncogenic')]
+dualRoleTable$oncogenic <- gsub("\n",", ",dualRoleTable$oncogenic)
+dualRoleTable$tumorSuppressive <- gsub("\n",", ",dualRoleTable$tumorSuppressive)
 
-With high inter-annotator agreement (Fig S\@ref(fig:annotationAndModel)B), the data were split into 75%/25% training and test sets. A machine-learning model was built for each of the three roles and precision-recall curves were generated (Fig S\@ref(fig:annotationAndModel)C) using the test set. Receiver operating characteristic (ROC) curves were not used as the class balance for each relation was below 20%. A high threshold was selected for each gene role in order to provide high-precision prediction with the accepted trade-off of low recall (Fig S\@ref(fig:annotationAndModel)D).
+suppressWarnings(dualRoleTable %>%
+  #dplyr::mutate_all(linebreak) %>%
+  knitr::kable(
+    booktabs = TRUE, escape=FALSE,
+    caption = 'Some genes can act as an oncogene in one cancer and a tumor suppressor in another cancer. CancerMine can find these genes and this table shows a selection that have strong support (at least 4 papers and >90% certainty of their role in a cancer type).',
+    col.names = c('Gene','Oncogene In','Tumor Suppressor In'),
+    row.names = F
+    ) %>%
+  kable_styling())
 
-The trade-off of higher precision with lower recall was made based on the hypothesis that there exists a large amount of redundancy within the published literature for the important genes in frequently discussed cancer types. The same idea is often stated multiple times in different papers in slightly different ways. Therefore, for frequently stated ideas, a method with lower recall would likely identify at least one occurrence. Nevertheless, we also distribute a version with thresholds of 0.5 for researchers who are willing to accept to a higher level of noise.
-
-```{r textminedOverview, echo=F, eval=T, fig.width=9, fig.asp=1.2,  fig.cap='(ref:textminedOverview)'}
-grid.arrange(fig_textminedOverview)
 ```
 
-(ref:textminedOverview) Overview of the cancer gene roles extracted from the complete corpora. (a) The counts of the three gene roles extracted. (b) and (c) show the most frequently extracted genes and cancer types in cancer gene roles. (d) The most frequent journal sources for cancer gene roles with the section of the paper highlighted by color. (e) illustrates a large number of cancer gene roles have only a single citation supporting it but that a large number (`r paper.triplesWithMultipleCitations`) have multiple citations.
-
-We apply the models to all sentences selected from PubMed abstracts and PMCOA/PMCAMC full-text articles, identifying `r paper.sentenceCount` sentences from `r paper.pmidCount` unique papers that mention gene roles in cancer. We extract the unique gene/cancer pairs for each role (Fig S\@ref(fig:textminedOverview)A) and find that `r paper.geneCount` genes and `r paper.cancerCount` cancer types are covered. These capture the commonly discussed cancer genes and types (Fig S\@ref(fig:textminedOverview)B/C) from a large variety of journals (Fig S\@ref(fig:textminedOverview)D). We provide coverage of `r paper.diseaseOntologyCoverage`% (`r paper.cancerCount`/`r paper.diseaseOntologyCancerCount`) of the cancer types described in the Disease Ontology [@schriml2011disease]  having at least one gene association. These results are made accessible through a web portal, which can be explored through a gene or cancer-centric view. The resulting data are stored with Zenodo for versioning and download. This storage will provide the results in perpetuity. The results are licensed under the Creative Commons Public Domain (CC0) license to allow this data to be easily integrated with precision cancer workflows.
-
-Our hypothesis of high levels of redundancy within the literature is supported for very important cancer genes. For example, there is frequent extraction of commonly-known gene roles such as ERBB2 as an oncogene in breast cancer (`r paper.erbb2_oncogene_breast` citations) and APC as a tumor suppressor in colorectal cancers (`r paper.apc_tumorsuppressor_colorectal` citations). On the other hand, a long tail exists of gene roles with only a single citation – `r paper.triplesWithSingleCitations` of `r paper.triplesWithAnyCitations` (`r paper.percSingleCitations`%) of extracted cancer gene roles (Fig S\@ref(fig:textminedOverview)E). For researchers that are accepting of a higher false positive rate, we provide an additional less stringent dataset using a lower prediction threshold and estimated average precision and recall of `r paper.lenient_avg_precision` and `r paper.lenient_avg_recall` respectively. The individual prediction score, akin to probabilities, are included so that users can further refine the results if needed.
-
-## `r paper.novelTumorSuppressorPerMonth2017` novel putative tumor suppressors are published in literature each month {-}
-
-```{r time, echo=F, eval=T, fig.width=8, fig.asp=1.0, fig.cap='(ref:time)'}
-grid.arrange(fig_time)
+```{r supfig_subsectionnovelty, echo=F, eval=T, fig.width=15, fig.asp=0.5,  fig.cap='(ref:supfig_subsectionnovelty)'}
+grid.arrange(subsectionPlotWithNovelty)
 ```
 
-(ref:time) Examination of the sources of the extracted cancer gene roles with publication date. (a) More cancer gene roles are extracted each year but the relative proportion of novel roles remains roughly the same. (b) Roles extracted from older papers tend to focus on oncogenes, but mentions of driver genes have become more frequent since 2010. (c) The full text article is becoming a more important source of text mined data. (d) Different sections of the paper, particularly the Introduction and Discussion parts, are key sources of mentions of cancer gene roles. The number of unique genes (e) and cancers (f) that are associated increase each year. 
+(ref:supfig_subsectionnovelty) The link between a cancer gene associations novelty to CancerMine and the location within the paper where it is founded is shown. Mentions in the Introduction are much more likely to be not novel compared to other sections.
 
-By examining the publication dates of the articles containing the mined cancer gene roles, we can see that the rate of published cancer gene roles is increasing over time (Fig S\@ref(fig:time)A). In 2017, there were `r paper.rolesIn2017` mentions of cancer gene roles in publications, translating to over ~`r paper.avgRolesPerMonth` each month. Approximately `r paper.notnovel2017Perc`% of these are gene roles that have been published previously, but more importantly, the remaining `r paper.novel2017Perc`% are novel. A breakdown by the role shows that oncogene and tumor suppressor gene mentions greatly outnumber driver genes. In 2017, `r paper.driver2017`, `r paper.oncogene2017` and `r paper.tumorsuppressor2017` genes were mentioned as drivers, oncogenes and tumor suppressors respectively (Fig S\@ref(fig:time)B). Combining this data, we find that there were, on average, `r paper.novelDriverPerMonth2017` novel drivers, `r paper.novelOncogenePerMonth2017` novel oncogenes and `r paper.novelTumorSuppressorPerMonth2017` novel tumor suppressors described in literature each month. This emphasizes the need to keep these text mining results up-to-date at a frequency of less than a year. To this end, we have integrated the CancerMine resource with the PubRunner framework to execute monthly updates (paper forthcoming - https://github.com/jakelever/pubrunner).  
 
-Unhindered access to the full-text of articles for text mining purposes remains a key challenge. A larger number of cancer gene role mentions are extracted from the full text (`r paper.articleCount`) than from the abstract alone (`r paper.abstractCount`), with a smaller number extracted from the titles (`r paper.titleCount`). As can be seen in Fig S\@ref(fig:time)C, the number extracted from full text articles is increasingly dramatically over time. This is likely linked to the increasing number of publications included in the PubMed Central Open Access subset and Author Manuscript Collection. This strengthens the need for publishers to provide open access and for funding agencies to require publications in platforms that allow text mining. From the full text articles, we extract, where possible, the in-text location of the relationship captured within the paper (Fig S\@ref(fig:time)D). Interestingly, a substantial number of the mentions are found in the Introduction section, suggesting that the cancer gene’s role is often discussed as background information and not necessarily a result of the paper. Knowing the subsection that a relationship is captured from can be valuable information for CancerMine users, since a user can then quickly ascertain if the discussed cancer role is prior knowledge or a likely result from the publication. We tested to see whether a relationship existed between the novelty of a cancer gene association and the section it is mentioned in within the paper. We found a very strong association (Chi-squared test : P=1.3x10^-79). Novel roles are much less likely to appear in the Introduction of a paper compared to the other section of the paper (excluding Title and Abstract). 
-
-This also highlights the important point that the scientific quality of a paper cannot be verified automatically by text mining technologies, since these methods rely on the statements made by the original author. Hence, any use of text-mined resources will always require users to access the original papers to evaluate the assertion of a gene’s role in a particular cancer. Figures S\@ref(fig:time)E/F illustrate the growing coverage of cancers and genes as an increasing number of genes are mentioned as oncogenes and tumor suppressors each year.
-
-```{r accrualAndDualRoles, echo=F, eval=T, fig.width=8, fig.asp=2.0, fig.cap='(ref:accrualAndDualRoles)'}
-grid.arrange(fig_accrualAndDualRoles)
+```{r supfig_sections, echo=F, eval=T, fig.width=15, fig.asp=0.5,  fig.cap='(ref:supfig_sections)'}
+grid.arrange(sectionPlotWithoutHeader)
 ```
 
-(ref:accrualAndDualRoles) (a) Cancer gene roles first discussed many years ago have a longer time to accrue further mentions. (b) Some cancer gene roles grow substantially in discussion while others fade away. (c) CancerMine can further validate the dual roles that some genes play as oncogenes and tumor suppressive. Citation counts are shown in parentheses.
+(ref:supfig_sections) The mentions of drivers, oncogenes and tumor suppressors are increasingly being extracted from the main section of full-text articles. Please note that the minor dip in 2018 numbers (compared to 2017) is due to many 2018 papers only becoming accessible for text-mining later into 2019.
 
-Cancer gene roles that are first mentioned at earlier timepoints have more time to accrue additional citations (Fig S\@ref(fig:accrualAndDualRoles)A). Thus, it is no surprise that while most cancer gene roles have less than 10 associated citations, those with very large citation counts tend to be published over 10 years ago. For instance, ERBB2’s role as an oncogene in breast cancer is first extracted from a publication in `r paper.erbb2_oncogene_breast_firstYear` and has accumulated `r paper.erbb2_oncogene_breast` citations that fit our extraction criteria in literature since then. However, there are some cancer gene roles that were first extracted from publications within the last decade but have already accrued a great number of additional mentions. For instance, KRAS driving non-small cell lung carcinoma is first extracted from a paper published in `r paper.kras_driver_nsclc_firstYear`, and already has `r paper.kras_driver_nsclc` other papers mentioning this role since. Lastly, there are `r paper.forgottenRole_count` cancer gene roles that are mentioned in literature before 2000, but are not extracted in papers after that period. The most frequently mentioned cancer gene role that reflects this pattern is `r paper.forgottenRole_gene` as an `r paper.forgottenRole_role` in `r paper.forgottenRole_cancer`, with `r paper.forgottenRole_before2010` papers mentioning it before 2000 but no further citations afterwards.
 
-With the knowledge of date of publication, we have gleaned a historical perspective on the gene relations captured in literature. Fig S\@ref(fig:accrualAndDualRoles)B summarizes three trends of citations that we observe, as exemplified by three gene associations with breast cancer. ERBB2 is an example of the small number of well-established oncogenes that are more frequently discussed year upon year. NRAS in breast cancer exemplifies a gene that continues to be discussed in a single paper every few years, but has never gained importance in this cancer. RUNX3 has been discussed as a tumor suppressor in breast cancer in many papers in just the last few years. Its mechanism of action was elucidated after aggregated data from cell-line sequencing projects revealed its likely role as a tumor suppressor [@huang2012runx3].
-
-The cancer type is important when trying to understand the context of somatic mutations. This is underscored by examples such as NOTCH1. NOTCH1 is a commonly-cited gene that behaves as an oncogene in one cancer (acute T cell leukemia) and as a tumor suppressor in another (head and neck squamous cell carcinoma) [@radtke2003role]. We further validate CancerMine by querying the resource for the set of genes that are (i) strongly identified as an oncogene in at least one cancer type (>`r paper.dualRole_percRequired`% of >=`r paper.dualRole_citationsRequired` citations) and (ii) strongly identified as a tumor suppressor in at least one other cancer type. This method successfully identifies NOTCH1 along with several other genes that are reported to play dual roles in different cancer types (Fig S\@ref(fig:accrualAndDualRoles)C).
-
-## Text mining provides voluminous complementary data to Cancer Gene Census {-}
-
-```{r comparisons, echo=F, eval=T, fig.width=8, fig.asp=1.2, fig.cap='(ref:comparisons)'}
-grid.arrange(fig_comparisons)
+```{r supfig_comparisons_lowthreshold, echo=F, eval=T, fig.width=11, fig.asp=0.5,  fig.cap='(ref:supfig_comparisons_lowthreshold)'}
+grid.arrange(fig_comparisons_lowthreshold)
 ```
 
-(ref:comparisons) A comparison of CancerMine against resources that provide context for cancer genes. (a) The CancerMine resource contains substantially more cancer gene associations than the Cancer Gene Census resource. (b) Surprisingly few of the cancer gene associations are overlapping between the IntOGen resource and CancerMine . CancerMine overlaps substantially with the genes listed in the (c) TSGen and (d) ONGene resources.
-
-The Cancer Gene Census (CGC) [@futreal2004census] provides manually curated information about cancer genes with mutation types and their roles in cancer. CancerMine contains information on `r paper.geneCount` genes (compared to `r paper.cgcGeneCount` in CGC) and `r paper.cancerCount` cancer types (compared to `r paper.cgcCancerCount` in CGC). CancerMine overlaps with roughly a quarter of the oncogenes and tumor suppressors in the CGC when comparing specific cancer types (Fig S\@ref(fig:comparisons)A). When the CGC is compared to the less stringent CancerMine dataset, a further `r paper.cgcFoundInLessConservative` cancer gene roles are found to match. This indicates that CGC contains curated information not easily captured using the sentence extraction method and that CancerMine represents an excellent complementary resource to work with CGC. Our resource also provides the sentence in which the gene role is discussed, and citations that link to the corresponding published literature are made available to help the user easily evaluate the evidence supporting the gene’s role. CancerMine would be an excellent resource for prioritizing future curation of literature for resources such as CGC.
-
-The IntOGen resource leverages a number of cancer sequencing projects, including the Cancer Genome Atlas (TCGA) to index genes inferred to contain driver mutations. A comparison of the genes with their cancer types in CancerMine shows surprising differences (Fig S\@ref(fig:comparisons)B). CancerMine includes a much larger set of genes but has little overlap with the IntOGen resource. This suggests that many of the genes identified through the projects included in IntOGen are not yet frequently discussed in literature with respect to the specific cancer types in the IntOGen resource.
-
-ONGene and TSGene2 provide lists of oncogenes and tumor suppressors. Unfortunately these gene names are not associated with specific cancer types, which is an important aspect for precision oncology. When trying to differentiate between driving and passenger mutations, the lack of cancer type context would likely cause a high false positive rate. CancerMine contains ~`r paper.ongeneOverlapPerc`% of the genes in ONGene and ~`r paper.tsgeneOverlapPerc`% of TSGene2, and contains substantially more genes than both resources (Fig S\@ref(fig:comparisons)C/D). These results lend more weight to the use of automated text mining approaches for the population of knowledge bases, since no curation is required to keep the resource up-to-date.
+(ref:supfig_comparisons_lowthreshold) To explore the effect of high-precision low-recall classifier, we show a comparison without the strict thresholding. All classifiers use 0.5 instead of the higher thresholds. There is still not substantial overlap with the CGC and IntOGen resources suggesting that many of the gene associations in these databases are not mentioned in the literature in a form that can be extracted by CancerMine.
 
 
-## CancerMine provides insights into cancer similarities {-}
-
-```{r clustersAndTCGA, echo=F, eval=T, fig.width=10, fig.asp=1.0, fig.cap='(ref:clustersAndTCGA)'}
-grid.arrange(fig_profilesAndTCGA)
-#plotHeatmap() {-}
-#source('cancermine/fig_clusters.R') {-}
+```{r supfig_tcga, echo=F, eval=T, fig.width=15, fig.asp=0.5,  fig.cap='(ref:supfig_tcga)'}
+grid.arrange(fig_tcgaWithoutHeader)
 ```
 
-(ref:clustersAndTCGA) CancerMine data allows the creation of profiles for different cancer types using the number of citations as a weighting for each gene role. (a) The similarities between the top `r paper.clusteringTopCancerCount`  cancer types in CancerMine are shown through hierarchical clustering of cancers types and genes using weights from the top `r paper.clusteringTopCancerCount` cancer gene roles. (b) All samples in seven TCGA projects are analyzed for likely loss-of-function mutations compared with the CancerMine tumor suppressor profiles and matched with the closest profile. Percentages shown in each cell are the proportion of samples labeled with each CancerMine profile that are from the different TCGA projects. Samples that match no tumor suppressor in these profiles or are ambiguous are assigned to none. The TCGA projects are breast cancer (BRCA), colorectal adenocarcinoma (COAD), liver hepatocellular carcinoma (LIHC), prostate adenocarcinoma (PRAD), low grade glioma (LGG), lung adenocarcinoma (LUAD) and stomach adenocarcinoma (STAD).
+(ref:supfig_tcga) All samples in seven TCGA projects are analyzed for likely loss-of-function mutations compared with the CancerMine tumor suppressor profiles and matched with the closest profile. Percentages shown in each cell are the proportion of samples labeled with each CancerMine profile that are from the different TCGA projects. Samples that match no tumor suppressor in these profiles or are ambiguous are assigned to none. The TCGA projects are breast cancer (BRCA), colorectal adenocarcinoma (COAD), liver hepatocellular carcinoma (LIHC), prostate adenocarcinoma (PRAD), low grade glioma (LGG), lung adenocarcinoma (LUAD) and stomach adenocarcinoma (STAD).
 
-Oncology often takes an organ-centric view of cancer types which is reflected by the numerous disease ontologies that exist for the categorization and nomenclature of cancer including the Disease Ontology used in this project. However, modern medicine is beginning to consider some cancers based purely on the genetic underpinnings, developing basket trials and approving treatment regimens based on genetic indications only (as shown with the successful approval of Pembrolizumab for PD-1 positive cancer patients). The CancerMine resource allows for the creation of a gene-centric view of cancers, by clustering cancers based on the role of different genes. A gene-centric view has the potential to reveal treatment regimes that could be transferred to other genetically similar cancer types. To allow for visualization, we selected the top `r paper.clusteringTopCancerCount` cancers (based on citation count in CancerMine) and extracted the number of citations mentioning the role of the top `r paper.clusteringTopCancerCount` genes. This produces a profile for each cancer type showing the importance of each gene and its associated role. A heatmap that illustrates this for the top `r paper.clusteringTopCancerCount` cancer types and genes is shown in Fig S\@ref(fig:clustersAndTCGA)A.
-
-The clustering puts biologically similar or equivalent cancers together that are separate entities in the Disease Ontology. For example it groups colorectal with colon cancer and malignant glioma with glioblastoma multiforme. Some of these clusters also highlight known gene-cancer associations, for example, lung cancer, non-small cell lung carcinoma and lung adenocarinoma all cluster together, and are heavily associated with the KRAS and EGFR oncogenes. In fact, the strong cluster of genes on the left side separates cancers that are strongly associated with KRAS, EGFR, and TP53 (such as lung cancer) from those that are less so (such as thyroid medullary carcinoma). Put together, this approach is able to explain biological similarity of cancer types using shared gene associations. As an example, leukemia clusters closely with the more specific subtype, acute myeloid leukemia, and it is evident that this is driven by extracted associations of these cancers with MYC, ABL1 and many other genes. Several gene associations are noticeably low frequency compared to overall patterns, for instance KRAS in glioblastoma multiforme (GBM). While there are a small number of papers discussing KRAS in GBM, it is an infrequently discussed gene compared to EGFR and PTEN. Overall this visualization presents an easy method to explore the similarities and differences between cancer types.
-
-In order to validate the cancer genes identified in CancerMine, we compare results to somatic mutation data from the Cancer Genome Atlas (TCGA) project. We hypothesis that the genes denoted to be tumor suppressors would likely be affected by loss-of-function mutations. Oncogenes may be affected by gain-of-function mutations that are harder to identify, hence our focus on tumor suppressors. Using CancerMine profiles based on tumor suppressor genes, we compare somatic calls for all samples with mutation data within seven TCGA projects. For each sample, we match the somatic calls against the set of CancerMine tumor profiles and sum the importance of the tumor suppressors found to be mutated. Fig S\@ref(fig:clustersAndTCGA)B shows the percentages of top matches to each CancerMine profile. Six of the seven CancerMine profiles have their highest proportion matches with the corresponding TCGA project. Interestingly a large number of breast cancer and prostate cancer samples cannot be unambiguously labeled with one of the CancerMine profiles. For prostate cancer, roughly one third of the samples do not have any LoF mutations that match against any tumor suppressors for any of the seven types, suggesting that prostate cancer tumor suppressors are disabled through other mechanisms or that there are more tumor suppressors involved which have not been captured by CancerMine.
-
-The glioma (LGG) result is the most prominent with `r paper.tcga_LGG_glioma_perc`% of TCGA LGG samples being most closely identified with the CancerMine malignant glioma profile. This is largely due to the high prevalence of IDH1 (390/503) mutations identified in the LGG cohort. While this data would not be enough for a tumor type classifier on its own, this results shows there is substantial signal that can be leveraged for interpreting the genomic data and could be combined further with other mutational data. This is underscored when examining breast cancer tumor suppressors with only a single citation, genes that are hypothetically not well known to be tumor suppressors in breast cancer. Seven of these genes (ARID1B, FGFR2, KDM5B, SPEN, TBX3, PRKDC and KMT2C) are mutated in at least 10 TCGA BRCA samples providing extra strength for the importance of these genes in breast cancer. In fact, the mechanism through which KMT2C inactivation drives tumorgenesis was recently elaborated in ER-positive breast cancer [@gala2018kmt2c].
-
-# Discussion {-}
-
-This work contributes a much-needed resource of known drivers, oncogenes and tumor suppressors in a wide variety of cancer types. The text mining approach taken is able to discern complicated descriptions of cancer gene roles with a high level of precision. This provides for a continually updated resource with little need for human intervention. This generalizable method could extract other types of biological knowledge with only minor changes. However, there are several limitations to this approach that present interesting but challenging alleys for further investigation. Firstly, this method focuses on single sentence extraction due to the challenge of anaphora and coreference resolution across sentences. In Chapter 3, we showed that a high false positive rate occurs when identifying knowledge across multiple sentences. Our approach requires that authors discuss the gene name, role and cancer name all within the same sentence. This is a problem of writing style and probabilities that gets greatly diluted with the large number of publications processed. Furthermore our approach focuses on individual genes in isolation and is unable to capture complex interactions between cancer genes discussed in papers, e.g. mutual exclusivity. More of these complex relationships will likely be identified in future research and play a part in interpreting the somatic events in an individual cancer patient. Text mining approaches face growing challenges with extracting complex events like these, which may span multiple sentences or even paragraphs.
-
-One important concept when interpreting CancerMine data is that our methodology does not force a definition of a driver, oncogene or tumor suppressor and relies on the assertion of individual authors. A decision was made to not extract discussion of genes frequently mutated in cancer. This was due to the acknowledged problem of huge genes (e.g. TTN) that frequently accrue many somatic mutations but likely don’t play a part in cancer. Instead we rely on the authors’ assertions of the role a gene plays in cancer. The level of evidence differs greatly as some assertions are based on intervention studies (e.g. knockdowns) while others use observational studies (e.g mutation frequency or expression experiments).
-
-As has been noted, many attempts have been made to create a knowledge bases of this topic. Hosting the data through Zenodo and the code through GitHub provides a level of continuity that will guarantee that the project code and data stay accessible for the foreseeable future. Furthermore the PubRunner integration makes it easier to keep the results up-to-date. All data and analysis for this paper is open source and documented. We hope others will explore this data in order to infer new knowledge of cancer types and their associated genes.
-
-# Supplementary References
