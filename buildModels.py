@@ -22,7 +22,7 @@ if __name__ == '__main__':
 		print("Building %s model" % relationType)
 		print("  Loading training")
 		goldDir = 'gold'
-		trainCorpus = kindred.loadDir(dataFormat='standoff',directory=args.inTrain)
+		trainCorpus = kindred.load('standoff',args.inTrain)
 	
 		for doc in trainCorpus.documents:
 			doc.relations = [ r for r in doc.relations if r.relationType == relationType ]
