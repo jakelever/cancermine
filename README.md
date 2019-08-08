@@ -8,10 +8,13 @@
    <img src="https://img.shields.io/badge/data-viewer-9e42f4.svg" />
 </a>
 <a href="https://doi.org/10.5281/zenodo.1156241">
-   <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.1156241.svg" />
+   <img src="https://img.shields.io/badge/data-download-blue.svg" />
 </a>
 <a href="https://doi.org/10.1101/364406">
    <img src="https://img.shields.io/badge/bioRxiv-preprint-67baea.svg" />
+</a>
+<a href="https://doi.org/10.1038/s41592-019-0422-y">
+   <img src="https://img.shields.io/badge/nature-methods-red.svg" />
 </a>
 </p>
 
@@ -136,16 +139,18 @@ The code to generate all the figures and text for the paper can be found in [pap
 
 ## Citing Us
 
-The paper is now up at [bioRxiv](https://doi.org/10.1101/364406). It will be submitted to a journal in due course. It'd be wonderful if you would cite the paper if you use the methods or data set.
+The paper is now published in [Nature Methods](https://doi.org/10.1038/s41592-019-0422-y). The preprint can still be accessed at [bioRxiv](https://doi.org/10.1101/364406). It'd be wonderful if you would cite the paper if you use the methods or data set.
 
 ```
-@article{lever2018cancermine,
-  title={CancerMine: A literature-mined resource for drivers, oncogenes and tumor suppressors in cancer},
+@article{lever2019cancermine,
+  title={Cancer{M}ine: A literature-mined resource for drivers, oncogenes and tumor suppressors in cancer},
   author={Lever, Jake and Zhao, Eric Y and Grewal, Jasleen and Jones, Martin R and Jones, Steven JM},
-  journal={bioRxiv},
-  pages={364406},
-  year={2018},
-  publisher={Cold Spring Harbor Laboratory}
+  journal={Nature methods},
+  volume={16},
+  number={6},
+  pages={505},
+  year={2019},
+  publisher={Nature Publishing Group}
 }
 ```
 
