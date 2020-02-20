@@ -494,7 +494,8 @@ server <- function(input, output, session) {
       layout(title = paste('Genes'),
              xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
              yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))%>% 
-      config(displayModeBar = F)
+      config(displayModeBar = F) %>%
+      layout(showlegend = FALSE)
     
     p$elementId <- NULL
     p
@@ -677,7 +678,8 @@ server <- function(input, output, session) {
       layout(title = paste('Cancers'),
              xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
              yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))%>% 
-      config(displayModeBar = F)
+      config(displayModeBar = F) %>%
+      layout(showlegend = FALSE)
     
     p$elementId <- NULL
     p
