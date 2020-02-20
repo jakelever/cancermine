@@ -706,9 +706,9 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       if (input$cancer_collapseroles) {
-        table <- collated_noroles
+        outdata <- collated_noroles
       } else {
-        table <- collated
+        outdata <- collated
       }
       write.table(outdata, file, row.names = FALSE, sep='\t', quote=F)
     }
@@ -720,9 +720,9 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       if (input$cancer_collapseroles) {
-        table <- cancerData_noRoles()
+        outdata <- cancerData_noRoles()
       } else {
-        table <- cancerData()
+        outdata <- cancerData()
       }
       write.table(outdata, file, row.names = FALSE, sep='\t', quote=F)
     }
