@@ -3,6 +3,16 @@
 source('cancermine/dependencies.R')
 
 
+dumpVennData <- function(vennData,outFilename) {
+  rowCount <- max(unlist(lapply(vennData,FUN=length)))
+  outTable <- data.frame(matrix(nrow=rowCount,ncol=0))
+  for (name in names(vennData)) {
+    tmp <- as.vector(unlist(vennData[name]))
+    outTable[,name] <- c(tmp,rep('',rowCount-length(tmp)))
+  }
+  write.table(outTable,outFilename,sep='\t',row.names=F,quote=F)
+}
+
 collatedFilename <- 'cancermine/cancermine_collated.tsv'
 collatedFilename <- normalizePath(collatedFilename)
 
@@ -59,6 +69,7 @@ paper.moreGenesThanCGC <- prettyNum(paper.moreGenesThanCGC,big.mark=',')
 
 
 listInput <- list(CancerMine=unique(noDrivers$combined),CGC=unique(cgcData$combined))
+dumpVennData(listInput, 'comparisons_cgc.tsv')
 cgcPlot <- venn.diagram(
   x = listInput,
   scaled=F,
@@ -153,6 +164,7 @@ paper.intogenGenesInCancermine <- prettyNum(paper.intogenGenesInCancermine,big.m
 #missing <- intogen2014[!(intogen2014$combined %in% cancermine$combined),]
 
 listInput <- list(CancerMine=unique(cancermine$combined),IntOGen=unique(intogen2014$combined))
+dumpVennData(listInput, 'comparisons_intogen.tsv')
 intogenPlot <- venn.diagram(
   x = listInput,
   scaled=F,
@@ -173,6 +185,7 @@ cancermineTSIDs <- cancermine[cancermine$role=='Tumor_Suppressor','gene_entrez_i
 tsgeneData <- read.table('cancermine/TSgene.txt',header=T,sep='\t')
 
 listInput <- list(CancerMine=unique(cancermineTSIDs$gene_entrez_id),TSGene=unique(tsgeneData$GeneID))
+dumpVennData(listInput, 'comparisons_tsgene.tsv')
 tsgenePlot <- venn.diagram(
   x = listInput,
   scaled=F,
@@ -191,6 +204,7 @@ cancermineOncogeneIDs <- cancermine[cancermine$role=='Oncogene','gene_entrez_id'
 ongeneData <- read.table('cancermine/ongene.txt',header=T,sep='\t',quote='')
 
 listInput <- list(CancerMine=unique(cancermineOncogeneIDs$gene_entrez_id),ONGene=unique(ongeneData$OncogeneID))
+dumpVennData(listInput, 'comparisons_ongene.tsv')
 ongenePlot <- venn.diagram(
   x = listInput,
   scaled=F,
@@ -209,6 +223,7 @@ paper.ongeneOverlapPerc <- round(100.0 * paper.ongeneOverlapCount / paper.ongene
 
 civicDB <- read.table('cancermine/nightly-ClinicalEvidenceSummaries.tsv',header=T,sep='\t',quote='',comment='')
 listInput <- list(CancerMine=unique(cancermine$gene_entrez_id),CIViC=unique(civicDB$entrez_id))
+dumpVennData(listInput, 'comparisons_civic.tsv')
 civicPlot <- venn.diagram(
   x = listInput,
   scaled=F,

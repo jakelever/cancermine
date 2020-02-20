@@ -1,3 +1,6 @@
+
+source('cancermine/dependencies.R')
+
 Driver <- read.table('cancermine/prCurves/Driver.txt',header=T)
 Driver$role <- 'Driver'
 
@@ -31,6 +34,8 @@ selectedThresholds <- data.frame(role=c('Driver','Oncogene','Tumor_Suppressor'),
                                  threshold=c(0.80,0.76,0.92))
 
 data <- data[order(data$threshold),]
+write.table(data,'fig1a_data.tsv',sep='\t',quote=FALSE,row.names=FALSE)
+
 thresholdPlot <- xyplot(precision + recall ~ threshold | role, 
                         xlab="Threshold", ylab="Precision / Recall",
                         #auto.key=T,
@@ -78,6 +83,9 @@ geneRoleCounts <- suppressWarnings(inner_join(geneRoleCounts,geneCounts,by="gene
 colnames(geneRoleCounts) <- c('gene_normalized','role','role_citation_count','gene_citation_count')
 geneRoleCounts <- geneRoleCounts[order(geneRoleCounts$gene_citation_count,decreasing=T),]
 geneRoleCounts$gene_normalized <- factor(as.character(geneRoleCounts$gene_normalized), levels=unique(as.character(geneRoleCounts$gene_normalized)))
+
+write.table(geneCounts,'fig1b_genes.tsv',sep='\t',quote=FALSE,row.names=FALSE)
+
 topGenes <- geneCounts[1:topCount,'gene_normalized']
 
 topGeneRolesPlot <- barchart(role_citation_count ~ gene_normalized, 
@@ -102,6 +110,9 @@ cancerRoleCounts <- cancerRoleCounts[order(cancerRoleCounts$cancer_citation_coun
 cancerRoleCounts$cancer_normalized <- factor(as.character(cancerRoleCounts$cancer_normalized), levels=unique(as.character(cancerRoleCounts$cancer_normalized)))
 topCancers <- cancerCounts[1:topCount,'cancer_normalized']
 
+write.table(cancerCounts,'fig1b_cancers.tsv',sep='\t',quote=FALSE,row.names=FALSE)
+
+
 topCancerRolesPlot <- barchart(role_citation_count ~ cancer_normalized, 
                                ylab="Associations",
                                ylim=c(0,1.1*max(cancerCounts$freq)),
@@ -116,7 +127,7 @@ topCancerRolesPlot <- barchart(role_citation_count ~ cancer_normalized,
 dataOverviewPlot <- arrangeGrob(topGeneRolesPlot,topCancerRolesPlot,top='(b)')
 
 fig_briefcommunications1 <- arrangeGrob(prAndThresholdPlot,dataOverviewPlot,ncol=2)
-
+grid.arrange(fig_briefcommunications1)
 
 
 

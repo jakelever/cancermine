@@ -51,9 +51,12 @@ cancerCounts <- cancerCounts[order(cancerCounts$total_citation_count,decreasing=
 topCancers <- cancerCounts[1:paper.clusteringTopCancerCount,'cancer_normalized']
 
 clusterHeatmapData <- selectDataForHeatmap(cancermineProfiles,topCancers,paper.clusteringTopGeneRoleCount)
-
+write.table(as.data.frame(clusterHeatmapData),'fig2_cluster_data.tsv',sep='\t',quote=F,row.names=T)
 #fig_profiles <- plotHeatmapWithDendro(clusterHeatmapData)
-#heatmaply(clusterHeatmapData)#,file='test.jpeg')
+heatmaply(clusterHeatmapData,file='test.jpeg')
+
+mapObj <- heatmaply(clusterHeatmapData,file='test.jpeg')
+
 img <- readPNG("clustering.png")
 fig_profiles <- rasterGrob(img, interpolate=TRUE)
 fig_profiles <- arrangeGrob(fig_profiles,top='(a)')

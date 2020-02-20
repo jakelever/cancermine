@@ -86,14 +86,14 @@ sectionPlot <- barchart(freq ~ yearTxt,
                      groups=section,
                      ylab="Mentions per year",
                      par.settings = my.settings,
-                     auto.key=list(space="top", columns=1, 
+                     auto.key=list(space="top", columns=3, 
                                    points=FALSE, rectangles=TRUE),
                      scales=list(x=list(rot=45,labels=labels)),
                      stack=T,
                      horizontal=F)
 sectionPlotWithoutHeader <- sectionPlot
 sectionPlot = arrangeGrob(sectionPlot,top='(c)')
-grid.arrange(sectionPlot)
+grid.arrange(sectionPlotWithoutHeader)
 
 paper.novelGeneRolesPerMonth2018 <- round(nrow(cancermineSentences[cancermineSentences$isNovel & cancermineSentences$year==2018,]) / 12)
 paper.novelDriverPerMonth2018 <- round(nrow(cancermineSentences[cancermineSentences$isNovel & cancermineSentences$role=='Driver' & cancermineSentences$year==2018,]) / 12)
@@ -254,7 +254,10 @@ sentencesWithNovelty <- cancermineSentences[cancermineSentences$section=='articl
 sentencesWithNovelty <- sentencesWithNovelty[order(sentencesWithNovelty$year,sentencesWithNovelty$month,sentencesWithNovelty$day),]
 sentencesWithNovelty$isNovel <- !duplicated(sentencesWithNovelty[,c('role','gene_entrez_id','cancer_id')])
 
-noveltyWithSubsectionTable <- table(sentencesWithNovelty$isNovel,sentencesWithNovelty$subsection)
+sentencesWithNovelty$isIntroduction <- sentencesWithNovelty$subsection=='introduction'
+
+#noveltyWithSubsectionTable <- table(sentencesWithNovelty$isNovel,sentencesWithNovelty$subsection)
+noveltyWithSubsectionTable <- table(sentencesWithNovelty$isNovel,sentencesWithNovelty$isIntroduction)
 noveltyWithSubsectionTest <- chisq.test(noveltyWithSubsectionTable)
 
 paper.noveltyWithSubsection_pvalue <- signif(noveltyWithSubsectionTest$p.value,2)
