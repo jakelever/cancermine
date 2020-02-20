@@ -416,7 +416,11 @@ server <- function(input, output, session) {
       return("cancermine_collated.tsv")
     },
     content = function(file) {
-      outdata <- collated
+      if (input$gene_collapseroles) {
+        outdata <- collated_noroles
+      } else {
+        outdata <- collated
+      }
       write.table(outdata, file, row.names = FALSE, sep='\t', quote=F)
     }
   )
@@ -427,9 +431,9 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       if (input$gene_collapseroles) {
-        outdata <- geneData()
-      } else {
         outdata <- geneData_noRoles()
+      } else {
+        outdata <- geneData()
       }
       write.table(outdata, file, row.names = FALSE, sep='\t', quote=F)
     }
@@ -451,9 +455,9 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       if (input$gene_collapseroles) {
-        table <- geneData()
-      } else {
         table <- geneData_noRoles()
+      } else {
+        table <- geneData()
       }
       entries <- sentences[sentences$matching_id %in% table$matching_id,]
       
