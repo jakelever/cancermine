@@ -13,6 +13,20 @@ import json
 def now():
 	return time.strftime("%Y-%m-%d %H:%M:%S")
 
+dashCharacters = ["-", "\u00ad", "\u2010", "\u2011", "\u2012", "\u2013", "\u2014", "\u2043", "\u2053"]
+def fixDashes(text):
+	if any (dc in text for dc in dashCharacters):
+		for dc in dashCharacters:
+			text = text.replace(dc,'-')
+	return text
+
+def cleanCorpus(corpus):
+	for doc in corpus.documents:
+		if doc.text:
+			doc.text = fixDashes(doc.text)
+		if doc.metadata['title']:
+			doc.metadata['title'] = fixDashes(doc.metadata['title'])
+
 def filterCorpus(corpus,filterTerms):
 	filtered = kindred.Corpus()
 	for doc in corpus.documents:
@@ -42,6 +56,10 @@ def parseAndFindEntities(biocFile,filterTermsFile,wordlistPickle,outSentencesFil
 	ner = kindred.EntityRecognizer(lookup=termLookup,detectFusionGenes=False,detectMicroRNA=False,acronymDetectionForAmbiguity=True,mergeTerms=True)
 	for corpusno,corpus in enumerate(kindred.iterLoad('biocxml',biocFile)):
 		startTime = time.time()
+		cleanCorpus(corpus)
+		timers['clean'] += time.time() - startTime
+
+		startTime = time.time()
 		corpus = filterCorpus(corpus,filterTerms)
 		timers['filter'] += time.time() - startTime
 
@@ -66,6 +84,11 @@ def parseAndFindEntities(biocFile,filterTermsFile,wordlistPickle,outSentencesFil
 
 			for sentence in doc.sentences:
 				sentenceTextLower = sentence.text.lower()
+
+				# Remove extremely long sentences
+				if len(sentenceTextLower) > 1000:
+					continue
+
 				containsFilterTerm = any( ft in sentenceTextLower for ft in filterTerms)
 				if not containsFilterTerm:
 					continue

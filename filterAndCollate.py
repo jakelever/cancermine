@@ -1,76 +1,90 @@
 import argparse
 import csv
+import os
 import hashlib
 from collections import defaultdict
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Filter Cancermine for more conservative predictions')
-	parser.add_argument('--inUnfiltered',required=True,type=str,help='Cancermine TSV to filter')
+	parser.add_argument('--inData',required=True,type=str,help='Input directory with TSV files to be filtered')
+	parser.add_argument('--outUnfiltered',required=True,type=str,help='Output unfiltered data')
 	parser.add_argument('--outCollated',required=True,type=str,help='Output collated and filtered data')
 	parser.add_argument('--outSentences',required=True,type=str,help='Output filtered sentences that match collated data')
 	args = parser.parse_args()
+
+	assert os.path.isdir(args.inData)
 
 	thresholds = {'Driver':0.80, 'Oncogene': 0.76, 'Tumor_Suppressor': 0.92}
 
 	collated = defaultdict(set)
 	collatedMatchingID = {}
 
-	sentenceOrdering = set()
-	sentenceData = {}
-	geneLocs = defaultdict(set)
-	cancerLocs = defaultdict(set)
+	collatedKeyFields = 'role,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized'
 
-	readCount,writeCount = 0,0
-	with open(args.inUnfiltered,'r') as inF:
-		inTSV = csv.reader(inF,delimiter='\t')
-		
-		headers = next(inTSV, None)
+	inputFiles = sorted( [ os.path.join(args.inData,f) for f in os.listdir(args.inData) if f.endswith('.tsv') ] )
 
-		for row in inTSV:
-			tmp = ' pmid,title,journal,year,month,day,section,subsection,role,predictprob,cancer_id,cancer_name,cancer_normalized,cancer_start,cancer_end,gene_hugo_id,gene_entrez_id,gene_name,gene_normalized,gene_start,gene_end,sentence '
+	pubmedInputFiles = [ f for f in os.listdir(args.inData) if f.startswith('pubmed') and f.endswith('.tsv') ]
+	pmcInputFiles = [ f for f in os.listdir(args.inData) if f.startswith('pmc') and f.endswith('.tsv') ]
 
-			r = { h:v for h,v in zip(headers,row) }
-			predictprob = float(r['predictprob'])
-			role = r['role']
-			readCount += 1
+	otherFiles = [ f for f in os.listdir(args.inData) if f.endswith('.tsv') and not ( f in pubmedInputFiles or f in pmcInputFiles) ]
+	assert len(otherFiles) == 0, "Found other TSV files that don't appear to be from PubMed or PMC"
 
-			ambigiousIDs = False
-			for field in [r['cancer_id'],r['cancer_normalized'],r['gene_hugo_id'],r['gene_normalized']]:
-				if ';' in field or '|' in field:
-					ambigiousIDs = True
-					break
+	inputFiles = sorted(pmcInputFiles,reverse=True) + sorted(pubmedInputFiles,reverse=True)
 
-			if ambigiousIDs:
-				continue
+	inputFilesHeader = None
 
-			if predictprob > thresholds[role]:
-				#outTSV.writerow(row)
-				pmid = r['pmid']
-				if pmid == 'None':
-					continue # Uncitable so we skip it
+	pmidsAlreadySeen = set()
 
-				r['journal_short'] = r['journal']
-				if len(r['journal_short']) > 50:
-					r['journal_short'] = r['journal_short'][:50] + '...'
+	recordCount,filteredRecordCount = 0,0
+	with open(args.outUnfiltered,'w') as outUnfiltered, open(args.outSentences,'w') as outSentences:
+		for inputFile in inputFiles:
+			with open(os.path.join(args.inData,inputFile)) as inF:
+				
+				headers = inF.readline().strip('\n').split('\t')
+				if inputFilesHeader is None:
+					inputFilesHeader = headers
+					outUnfiltered.write("\t".join(headers) + '\n')
+					outSentences.write("matching_id\t" + "\t".join(headers) + '\n')
+				else:
+					assert inputFilesHeader == headers, "Headers don't match expected in file %s" % inputFile
 
-				collatedKeyFields = 'role,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized'
-				collatedKey = tuple( [ r[k] for k in collatedKeyFields.split(',') ] )
-				collated[collatedKey].add(pmid)
+				pmidsInThisFile = set()
 
-				# Make a field using the key data that can be used to match between tables
-				matchingID = hashlib.md5("|".join(list(collatedKey)).encode('utf-8')).hexdigest()
-				collatedMatchingID[collatedKey] = matchingID
+				for i,line in enumerate(inF):
+					row = line.strip('\n').split('\t')
 
-				sentenceKeyFields = 'pmid,title,journal,journal_short,year,month,day,section,subsection,role,predictprob,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized,sentence'
-				sentenceKey = tuple( [ r[k] for k in sentenceKeyFields.split(',') ] )
-				sentenceData[sentenceKey] = matchingID
-				sentenceOrdering.add( (r['year'],sentenceKey) )
-				geneLocs[sentenceKey].add((int(r['gene_start']),int(r['gene_end'])))
-				cancerLocs[sentenceKey].add((int(r['cancer_start']),int(r['cancer_end'])))
+					assert len(row) == len(headers), "Got %d columns, expected %d in row %d, file %s" % (len(row),len(headers),i+1,inputFile)
+					r = { h:v for h,v in zip(headers,row) }
+
+					role = r['role']
+					score = float(r['predictprob'])
+					threshold = thresholds[role]
+					recordCount += 1
+
+					pmid = r['pmid']
+					if pmid in pmidsAlreadySeen:
+						continue
+					pmidsInThisFile.add(pmid)
+
+					outUnfiltered.write("\t".join(r[h] for h in headers) + "\n")
+
+					keepIt = score > threshold and pmid != 'None'
+					if keepIt:
+						collatedKey = tuple( [ r[k] for k in collatedKeyFields.split(',') ] )
+						collated[collatedKey].add(pmid)
+
+						# Make a field using the key data that can be used to match between tables
+						matchingID = hashlib.md5("|".join(list(collatedKey)).encode('utf-8')).hexdigest()
+						collatedMatchingID[collatedKey] = matchingID
+
+						outSentences.write(matchingID + "\t" + "\t".join(r[h] for h in headers) + "\n")
+						filteredRecordCount += 1
+
+				pmidsAlreadySeen.update(pmidsInThisFile)
 
 
 	with open(args.outCollated,'w') as outF:
-		headers = 'matching_id,role,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized,citation_count'
+		headers = 'matching_id,%s,citation_count' % collatedKeyFields
 		headerCount = len(headers.split(','))
 		outF.write(headers.replace(',','\t') + '\n')
 
@@ -78,45 +92,14 @@ if __name__ == '__main__':
 		collatedCounts = sorted(collatedCounts,reverse=True)
 		for citation_count,collatedKey in collatedCounts:
 
-			role,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized = collatedKey
-
 			matchingID = collatedMatchingID[collatedKey]
 
-			outData = [matchingID,role,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized,str(citation_count)]
+			outData = [matchingID] + list(collatedKey) + [str(citation_count)]
 			assert len(outData) == headerCount
 
 			outLine = "\t".join(outData)
 			outF.write(outLine + "\n")
 
-	with open(args.outSentences,'w') as outF:
-		headers = 'matching_id,pmid,title,journal,journal_short,year,month,day,section,subsection,role,predictprob,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized,sentence,formatted_sentence'
-		headerCount = len(headers.split(','))
-		outF.write(headers.replace(',','\t') + '\n')
-
-		sentenceOrdering = sorted(list(sentenceOrdering),reverse=True)
-
-		for _,sentenceKey in sentenceOrdering:
-			matchingID = sentenceData[sentenceKey]
-
-			pmid,title,journal,journal_short,year,month,day,section,subsection,role,predictprob,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized,sentence = sentenceKey
-
-			charByChar = list(sentence)
-			for start,end in geneLocs[sentenceKey]:
-				charByChar[start] = '<b>' + charByChar[start]
-				charByChar[end-1] += '</b>'
-			for start,end in cancerLocs[sentenceKey]:
-				charByChar[start] = '<b>' + charByChar[start]
-				charByChar[end-1] += '</b>'
-
-			formattedSentence = "".join(charByChar)
-
-			outData = [ matchingID, pmid,title,journal,journal_short,year,month,day,section,subsection,role,predictprob,cancer_id,cancer_normalized,gene_hugo_id,gene_entrez_id,gene_normalized,sentence, formattedSentence ]
-			assert len(outData) == headerCount
-
-			outLine = "\t".join(outData)
-			outF.write(outLine + "\n")
-
-
-	print("%d records filtered to %d sentences and collated to %d cancer gene roles" % (readCount, len(sentenceData), len(collated)))
+	print("%d records filtered to %d sentences and collated to %d gene/cancer associations" % (recordCount, filteredRecordCount, len(collated)))
 	print("Written to %s and %s" % (args.outSentences, args.outCollated))
 

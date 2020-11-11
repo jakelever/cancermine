@@ -9,6 +9,7 @@ import re
 import string
 from collections import defaultdict,Counter
 import json
+import html
 
 def now():
 	return time.strftime("%Y-%m-%d %H:%M:%S")
@@ -39,10 +40,32 @@ def normalizeMIRName(externalID):
 
 	return normalizedName
 
+def getFormattedSentence(sentence,entitiesToHighlight):
+	charArray = [ html.escape(c) for c in sentence.text ]
+
+	sentenceStart = sentence.tokens[0].startPos
+	for e in entitiesToHighlight:
+		for startPos,endPos in e.position:
+			startPos -= sentenceStart
+			endPos -= sentenceStart
+
+			try:
+				charArray[startPos] = '<b>' + charArray[startPos]
+				charArray[endPos-1] = charArray[endPos-1] + '</b>'
+			except:
+				print("ERROR in getFormattedSentence")
+				print(doc.text)
+				print(e.text)
+				print(e.position)
+				sys.exit(1)
+
+	return "".join(charArray)
+
+headers = ['pmid','title','journal','journal_short','year','month','day','section','subsection','role','predictprob','cancer_id','cancer_name','cancer_normalized','cancer_start','cancer_end','gene_hugo_id','gene_entrez_id','gene_name','gene_normalized','gene_start','gene_end','sentence','formatted_sentence']
+
 def applyFinalFilter(row):
 	# Filter out incorrect output with some rules
 
-	headers = ['pmid', 'title', 'journal', 'year', 'month', 'day', 'section', 'subsection', 'role', 'predictprob', 'cancer_id', 'cancer_name', 'cancer_normalized', 'cancer_start', 'cancer_end', 'gene_hugo_id', 'gene_entrez_id', 'gene_name', 'gene_normalized', 'gene_start', 'gene_end', 'sentence']
 	assert len(row) == len(headers), "Number of columns in output data (%d) doesn't  match with header count (%d)" % (len(row),len(headers))
 
 	row = { h:v for h,v in zip(headers,row) }
@@ -114,7 +137,10 @@ def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,canc
 	timers['ner'] += time.time() - startTime
 	print("%s : ner" % now())
 
+
 	with codecs.open(outData,'a','utf-8') as outF:
+		outF.write("\t".join(headers) + "\n")
+
 		startTime = time.time()
 		for modelname,model in models.items():
 			model.predict(corpus)
@@ -125,6 +151,7 @@ def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,canc
 		startTime = time.time()
 
 		for doc in corpus.documents:
+			#print(doc)
 			if len(doc.relations) == 0:
 				continue
 
@@ -133,6 +160,10 @@ def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,canc
 				for entity,tokenIndices in sentence.entityAnnotations:
 					assert not entity in entity_to_sentence
 					entity_to_sentence[entity] = sentence
+
+			journal_short = doc.metadata['journal']
+			if journal_short and len(journal_short) > 50:
+				journal_short = journal_short[:50] + '...'
 
 			for relation in doc.relations:
 				sentence = entity_to_sentence[relation.entities[0]]
@@ -143,6 +174,10 @@ def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,canc
 					continue
 				#words = [ t.word for t in sentence.tokens ]
 				#text = " ".join(words)
+
+				entitiesAreAmbiguous = any ( [';' in e.externalID for e in relation.entities] )
+				if entitiesAreAmbiguous:
+					continue
 
 				sentenceStart = sentence.tokens[0].startPos
 
@@ -172,14 +207,15 @@ def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,canc
 					entityData.append(startPos - sentenceStart)
 					entityData.append(endPos - sentenceStart)
 
-
 				if doc.metadata["pmid"]:
 					m = doc.metadata
 					if not 'subsection' in m:
 						m['subsection'] = None
 
+					formattedSentence = getFormattedSentence(sentence,relation.entities)
+
 					prob = relation.probability
-					outData = [m['pmid'],m['title'],m["journal"],m["year"],m["month"],m["day"],m['section'],m['subsection'],relType,prob] + entityData + [sentence.text]
+					outData = [m['pmid'],m['title'],m["journal"],journal_short,m["year"],m["month"],m["day"],m['section'],m['subsection'],relType,prob] + entityData + [sentence.text, formattedSentence]
 					if applyFinalFilter(outData):
 						outLine = "\t".join(map(str,outData))
 						outF.write(outLine+"\n")
