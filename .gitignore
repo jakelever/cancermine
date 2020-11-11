@@ -24,3 +24,6 @@ ongene.txt
 
 .snakemake/
 models.flag
+
+working/
+test_working/
