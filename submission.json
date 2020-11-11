@@ -1,0 +1,12 @@
+{
+	"file_list": [
+		"working/cancermine_collated.tsv",
+		"working/cancermine_sentences.tsv",
+		"working/cancermine_unfiltered.tsv"
+	],
+	"title": "CancerMine",
+	"author": "Jake Lever",
+	"author_affiliation": "Stanford University",
+	"description_file": "output_description.md",
+	"existing_zenodo_id": "1156241"
+}
