@@ -156,7 +156,7 @@ ui <- function(req) {
                 ),
                 tabPanel("By Cancer", 
                          sidebarPanel(
-                           selectizeInput("cancer_input", "Cancer", cancerNames, selected = 'acute T cell leukemia', multiple = FALSE, options = list(maxOptions = 2*length(cancerNames))),
+                           selectizeInput("cancer_input", "Cancer", cancerNames, selected = 'diffuse large B-cell lymphoma', multiple = FALSE, options = list(maxOptions = 2*length(cancerNames))),
                            plotlyOutput("cancer_overview"),
                            checkboxInput("cancer_collapseroles", "Collapse roles", FALSE),
                            width=3
