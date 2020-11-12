@@ -2,8 +2,7 @@ language: python
 python:
   - "3.8"
 install:
-  - pip install snakemake
-  - pip install kindred
+  - pip install kindred snakemake zenodo_get
   - python -m spacy download en
 script:
    - sh demoRun.sh
