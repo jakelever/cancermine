@@ -26,7 +26,9 @@ CancerMine is an automatically updated dataset. You can navigate the data using 
 
 This is a Python3 project which has been tested on Centos 6/7 but should work on other Linux operating systems and MacOS. An individual process of this can be run on a laptop or desktop computer. But in order to process all of the literature (PubMed, etc), this should really be run on a cluster or server-like machine. A cluster that uses Slurm or the SunGrid engine (SGE) are supported. Each node needs only 4 GBs on RAM.
 
-This project relies on text mining using [Kindred](https://github.com/jakelever/kindred) and resource management with [PubRunner](https://github.com/jakelever/pubrunner). These can be installed through pip.
+This project relies on text mining using [Kindred](https://github.com/jakelever/kindred) and [Snakemake](https://snakemake.github.io/). These can be installed through pip.
+
+It uses biomedical text converted using [BioText](https://github.com/jakelever/biotext).
 
 ## Installation Guide
 
@@ -36,10 +38,12 @@ You can clone this repo using Git or download the [ZIP file](https://github.com/
 git clone https://github.com/jakelever/cancermine.git
 ```
 
-The dependencies can be installed with the command below. Remember to install the English language model for Spacy.
+It uses the [BioText](https://github.com/jakelever/biotext) project which downloads and converts the biomedical research literature into the [BioC XML](http://bioc.sourceforge.net/) format. You'll need to clone it and run the conversion scripts.
+
+The code dependencies can be installed with the command below. Remember to install the English language model for Spacy.
 
 ```
-pip install kindred pubrunner
+pip install kindred snakemake zenodo_get
 python -m spacy download en
 ```
 
@@ -82,18 +86,20 @@ python filterAndCollate.py --inUnfiltered exampledata/out_unfiltered.tsv --outCo
 
 ## Instructions for use
 
-To run the full thing, you should use PubRunner. It manages the download of all the inputs outlined below. But first, you should do a test run (which should only last a minute or so):
+To run the full thing, you should use Snakemake. It manages the download of all the inputs outlined below. But first, you should do a test run (which should only last a minute or so):
 
 ```
-pubrunner --test .
+MODE=test snakemake --cores 1
 ```
 
-Then to do the full run which may take a long time, run:
+Then to do the full run which may take a long time, run the following and set the path to the BIOTEXT directory accordingly:
 ```
-pubrunner .
+MODE=full BIOTEXT=$BIOTEXT snakemake --cores 1
 ```
 
-This will download all the corpora files, build and apply models. PubRunner can be setup to use a cluster (using SnakeMake). This is highly recommended. On a cluster with approximately 300 concurrent jobs, this takes approximately 12 hours. Each node needs 4GB of RAM.
+Practically, you'll likely want to use a cluster to parallelize this. Please refer to the [Snakemake documentation](https://snakemake.readthedocs.io/en/stable/executing/cluster.html) for information about how to use a cluster.
+
+For uploading the output to Zenodo, this project uses [bigzenodo](https://pypi.org/project/bigzenodo/) and the [submission.json](https://github.com/jakelever/cancermine/blob/master/submission.json) file.
 
 It is not possible to exactly reproduce the results as the data in PubMed and PMC are constantly being added to. The data used in the paper is downloadable from Zenodo with the [Jun 30th 2018 release](http://doi.org/10.5281/zenodo.1302062).
 
@@ -136,6 +142,8 @@ The code to generate all the figures and text for the paper can be found in [pap
 ## Changelog
 
 - v11 data release: change to Kindred's EntityRecognizer uses strict string matching instead of token matching, so results are minorly different
+- v29 data release: WARNING - this release contained buggy data and missed publications in the Author Manuscript Collection. This was after a conversion from PubRunner to BioText+snakemake with some issues
+- v30 data release: Fixed issues with conversion to BioText+snakemake with an updated Biowordlist dataset
 
 ## Citing Us
 
