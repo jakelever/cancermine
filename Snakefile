@@ -8,6 +8,7 @@ assert os.getenv('MODE') in ['full','test'], "Must set environmental variable MO
 if os.getenv('MODE') == 'full':
 	source_dir = os.getenv('BIOTEXT')
 	assert source_dir and os.path.isdir(source_dir), "For full run, must set environmental variable BIOTEXT to directory with BIOTEXT BioC XML files"
+	source_dir = source_dir.rstrip('/')
 	work_dir = 'working'
 elif os.getenv('MODE') == 'test':
 	source_dir = 'test_data'
