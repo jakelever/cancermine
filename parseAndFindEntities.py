@@ -20,12 +20,15 @@ def fixDashes(text):
 			text = text.replace(dc,'-')
 	return text
 
+def tidyWhitespace(text):
+	return re.sub(r'\s+', ' ', text)
+
 def cleanCorpus(corpus):
 	for doc in corpus.documents:
 		if doc.text:
-			doc.text = fixDashes(doc.text)
+			doc.text = tidyWhitespace(fixDashes(doc.text))
 		if doc.metadata['title']:
-			doc.metadata['title'] = fixDashes(doc.metadata['title'])
+			doc.metadata['title'] = tidyWhitespace(fixDashes(doc.metadata['title']))
 
 def filterCorpus(corpus,filterTerms):
 	filtered = kindred.Corpus()
@@ -55,6 +58,10 @@ def parseAndFindEntities(biocFile,filterTermsFile,wordlistPickle,outSentencesFil
 	parser = kindred.Parser()
 	ner = kindred.EntityRecognizer(lookup=termLookup,detectFusionGenes=False,detectMicroRNA=False,acronymDetectionForAmbiguity=True,mergeTerms=True)
 	for corpusno,corpus in enumerate(kindred.iterLoad('biocxml',biocFile)):
+		# Clean any annotations already in the data
+		corpus.removeRelations()
+		corpus.removeEntities()
+
 		startTime = time.time()
 		cleanCorpus(corpus)
 		timers['clean'] += time.time() - startTime
