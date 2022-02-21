@@ -27,3 +27,5 @@ models.flag
 
 working/
 test_working/
+
+slurm-*
