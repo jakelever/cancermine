@@ -154,6 +154,8 @@ def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,canc
 			#print(doc)
 			if len(doc.relations) == 0:
 				continue
+			if not doc.metadata["pmid"]:
+				continue
 
 			entity_to_sentence = {}
 			for sentence in doc.sentences:
@@ -181,12 +183,20 @@ def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,canc
 
 				sentenceStart = sentence.tokens[0].startPos
 
+				skip = False
+
 				relType = relation.relationType
 				entityData = []
 				for entity in relation.entities:
 					entityData.append(entity.externalID)
+
+					startPos,endPos = entity.position[0]
 					if entity.entityType == 'gene':
 						entityData.append(Hugo2Entrez[entity.externalID])
+
+						afterText = doc.text[endPos:].strip()
+						if afterText.startswith('-AS'):
+							skip = True
 
 					entityData.append(entity.text)
 
@@ -203,22 +213,24 @@ def cancermine(sentenceFile,modelFilenames,filterTerms,wordlistPickle,genes,canc
 					entityData.append(normalizedTerm)
 					
 					assert len(entity.position) == 1, "Expecting entities that are contigious and have only one start and end position within the text"
-					startPos,endPos = entity.position[0]
+
 					entityData.append(startPos - sentenceStart)
 					entityData.append(endPos - sentenceStart)
 
-				if doc.metadata["pmid"]:
-					m = doc.metadata
-					if not 'subsection' in m:
-						m['subsection'] = None
+				if skip:
+					continue
 
-					formattedSentence = getFormattedSentence(sentence,relation.entities)
+				m = doc.metadata
+				if not 'subsection' in m:
+					m['subsection'] = None
 
-					prob = relation.probability
-					outData = [m['pmid'],m['title'],m["journal"],journal_short,m["year"],m["month"],m["day"],m['section'],m['subsection'],relType,prob] + entityData + [sentence.text, formattedSentence]
-					if applyFinalFilter(outData):
-						outLine = "\t".join(map(str,outData))
-						outF.write(outLine+"\n")
+				formattedSentence = getFormattedSentence(sentence,relation.entities)
+
+				prob = relation.probability
+				outData = [m['pmid'],m['title'],m["journal"],journal_short,m["year"],m["month"],m["day"],m['section'],m['subsection'],relType,prob] + entityData + [sentence.text, formattedSentence]
+				if applyFinalFilter(outData):
+					outLine = "\t".join(map(str,outData))
+					outF.write(outLine+"\n")
 
 		timers['output'] += time.time() - startTime
 
