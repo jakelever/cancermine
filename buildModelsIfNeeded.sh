@@ -4,6 +4,7 @@ set -eux
 if [ ! -d models ]; then
 	mkdir models
 
+	rm -fr cancermine_corpus
 	mkdir cancermine_corpus
 	cd cancermine_corpus
 	unzip -j -qq ../data/cancermine_corpus.zip
