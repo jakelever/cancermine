@@ -38,6 +38,19 @@ def filterCorpus(corpus,filterTerms):
 			filtered.addDocument(doc)
 	return filtered
 
+# Deal with table data stored in tab-delimited form
+def splitTabbedCorpus(corpus):
+	new_corpus = kindred.Corpus()
+	for doc in corpus.documents:
+		for block in doc.text.split('\t'):
+			block = block.strip()
+			if block:
+				new_doc = kindred.Document(block)
+				new_doc.metadata = doc.metadata
+				new_corpus.addDocument(new_doc)
+
+	return new_corpus
+
 def parseAndFindEntities(biocFile,filterTermsFile,wordlistPickle,outSentencesFilename):
 	print("%s : start" % now())
 
@@ -61,6 +74,8 @@ def parseAndFindEntities(biocFile,filterTermsFile,wordlistPickle,outSentencesFil
 		# Clean any annotations already in the data
 		corpus.removeRelations()
 		corpus.removeEntities()
+
+		corpus = splitTabbedCorpus(corpus)
 
 		startTime = time.time()
 		cleanCorpus(corpus)
