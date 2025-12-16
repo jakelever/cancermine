@@ -1,10 +1,7 @@
 # CancerMine
 
 <p>
-<a href="https://travis-ci.org/jakelever/cancermine">
-   <img src="https://travis-ci.org/jakelever/cancermine.svg?branch=master" />
-</a>
-<a href="http://bionlp.bcgsc.ca/cancermine/">
+<a href="https://cancermine.ai4biomed.org">
    <img src="https://img.shields.io/badge/data-viewer-9e42f4.svg" />
 </a>
 <a href="https://doi.org/10.5281/zenodo.1156241">
@@ -20,7 +17,7 @@
 
 The CancerMine resource is a text-mined knowledgebase of drivers, oncogenes and tumor suppressors in cancer. Abstracts from PubMed and full-text articles from PubMed Central Open Access subset and Author Manuscript Collections are processed to find references to genes as drivers, oncogenes and tumor suppressors in different cancer types.
 
-CancerMine is an automatically updated dataset. You can navigate the data using the [web viewer](http://bionlp.bcgsc.ca/cancermine/) or you can download the latest data from [Zenodo](https://doi.org/10.5281/zenodo.1156241) (or through the [web viewer](http://bionlp.bcgsc.ca/cancermine/)). You likely would not have to run any of the code in this repository.
+CancerMine is an automatically updated dataset. You can navigate the data using the [web viewer](http://bionlp.bcgsc.ca/cancermine/) or you can download the latest data from [Zenodo](https://doi.org/10.5281/zenodo.1156241) (or through the [web viewer](https://cancermine.ai4biomed.org)). You likely would not have to run any of the code in this repository.
 
 ## System Requirements
 
@@ -129,7 +126,7 @@ You likely want **cancermine\_collated.tsv** if you just want the list of cancer
 
 ## Shiny App
 
-The code in [shiny/](https://github.com/jakelever/cancermine/tree/master/shiny) is the Shiny code used for the [web viewer](http://bionlp.bcgsc.ca/cancermine/). If it is helpful, please use the code for your own projects. The list of dependencies is found at the top of the [app.R](https://github.com/jakelever/cancermine/blob/master/shiny/app.R) file.
+The code in [shiny/](https://github.com/jakelever/cancermine/tree/master/shiny) is the Shiny code used for the [web viewer](https://cancermine.ai4biomed.org). If it is helpful, please use the code for your own projects. The list of dependencies is found at the top of the [app.R](https://github.com/jakelever/cancermine/blob/master/shiny/app.R) file.
 
 ## Explanation and Pseudocode
 
