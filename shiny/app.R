@@ -9,6 +9,9 @@ library(data.table)
 library(stringr)
 library(ggplot2)
 library(heatmaply)
+library(tidyr)
+library(tibble)
+library(gplots)
 
 # Weird hack as R sometimes "forgets" its working directory
 wd <- setwd(".")

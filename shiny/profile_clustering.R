@@ -16,18 +16,35 @@ generateProfiles <- function(cancermine) {
 
 selectDataForHeatmap <- function(cancermineProfiles,selectedCancers,roleCount) {
   
-  selectedGeneRoles <- cancermineProfiles[cancermineProfiles$cancer_normalized %in% selectedCancers,c('gene_and_role','importance_score')]
-  selectedGeneRoles <- selectedGeneRoles[order(selectedGeneRoles$importance_score,decreasing=T),]
-  selectedGeneRoles <- selectedGeneRoles[!duplicated(selectedGeneRoles$gene_and_role),'gene_and_role']
-  selectedGeneRoles <- selectedGeneRoles[1:roleCount]
+  # 1) Select and rank gene_and_role by importance, keep unique, take top N
+  selectedGeneRoles <- cancermineProfiles %>%
+    filter(cancer_normalized %in% selectedCancers) %>%
+    select(gene_and_role, importance_score) %>%
+    arrange(desc(importance_score)) %>%
+    distinct(gene_and_role, .keep_all = FALSE) %>%  # keep first occurrence after sorting
+    slice_head(n = roleCount) %>%
+    pull(gene_and_role)
   
-  selectedImportanceScores <- cancermineProfiles[cancermineProfiles$cancer_normalized %in% selectedCancers,]
-  selectedImportanceScores <- selectedImportanceScores[selectedImportanceScores$gene_and_role %in% selectedGeneRoles,]
+  # 2) Filter the table to the chosen roles
+  selectedImportanceScores <- cancermineProfiles %>%
+    filter(cancer_normalized %in% selectedCancers,
+           gene_and_role %in% selectedGeneRoles)
   
-  dense <- acast(selectedImportanceScores, 
-                 cancer_normalized ~ gene_and_role,
-                 value.var="importance_score",
-                 fill=0)
+  # 3) Wide pivot to a dense matrix (fill missing with 0)
+  dense_tbl <- selectedImportanceScores %>%
+    select(cancer_normalized, gene_and_role, importance_score) %>%
+    pivot_wider(
+      names_from = gene_and_role,
+      values_from = importance_score,
+      values_fill = 0
+    )
+  
+  dense <- dense_tbl %>%
+    select(-cancer_normalized) %>%     # drop the id column before converting
+    as.matrix()
+  
+  # Assign row names after conversion
+  rownames(dense) <- dense_tbl$cancer_normalized
   
   return(dense)
 }
