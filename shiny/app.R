@@ -17,7 +17,7 @@ setwd(wd)
 # Make an empty Google analytics file (for dev version - not for production)
 if (!file.exists('google-analytics.js'))
 {
-  file.create('google-analytics.js')
+  cat("<script></script>",file="google-analytics.js",sep="\n")
 }
 
 collatedFilename <- 'cancermine_collated.tsv'
@@ -29,8 +29,8 @@ fileInfo <- file.info(collatedFilename)
 modifiedDate <- strsplit(as.character(fileInfo$mtime), ' ')[[1]][1]
 
 
-collated <- fread(collatedFilename,sep='\t',header=T,stringsAsFactors=TRUE)
-sentences <- fread(sentencesFilename,sep='\t',header=T,stringsAsFactors=TRUE)
+collated <- fread(collatedFilename,sep='\t',header=T,quote="",stringsAsFactors=TRUE)
+sentences <- fread(sentencesFilename,sep='\t',header=T,quote="",stringsAsFactors=TRUE,select=c('matching_id','pmid','role','journal_short','year','section','subsection','formatted_sentence'))
 
 # Fill in some details for the citation table
 sentences$pubmed_link <- paste("<a target=\"_blank\" href='https://www.ncbi.nlm.nih.gov/pubmed/", sentences$pmid, "'>", sentences$pmid, "</a>", sep='')
