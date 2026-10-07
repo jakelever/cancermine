@@ -37,11 +37,11 @@ git clone https://github.com/jakelever/cancermine.git
 
 It uses the [BioText](https://github.com/jakelever/biotext) project which downloads and converts the biomedical research literature into the [BioC XML](http://bioc.sourceforge.net/) format. You'll need to clone it and run the conversion scripts.
 
-The code dependencies can be installed with the command below. Remember to install the English language model for Spacy.
+The code dependencies can be installed with the command below. Remember to install the English language model for Spacy. Kindred 2.8.3 needs scikit-learn older than 1.8 (the `multi_class` argument was removed in 1.8).
 
 ```
-pip install kindred snakemake zenodo_get
-python -m spacy download en
+pip install kindred snakemake zenodo_get "scikit-learn<1.8"
+python -m spacy download en_core_web_sm
 ```
 
 Installation should take a maximum of 15 minutes (mostly due to the Spacy and language models installation).
