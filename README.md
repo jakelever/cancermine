@@ -62,11 +62,11 @@ Then you need to process the input wordlists to get them ready for quick access.
 python wordlistLoader.py --genes exampledata/mini_terms_genes.tsv --cancers exampledata/mini_terms_cancers.tsv --drugs exampledata/mini_terms_drugs.tsv --conflicting exampledata/mini_terms_conflicting.tsv --wordlistPickle exampledata/mini_terms.pickle
 ```
 
-There is a small test input file ([examples/test.bioc.xml](https://github.com/jakelever/cancermine/blob/master/exampledata/input.bioc.xml)). It's in [BioC XML format](http://bioc.sourceforge.net/) which is a format for biomedical corpora. You can run the relation extraction process with the commands below. There are also mini wordlists for test usage which are tiny subsets of the [BioWordlists project](https://github.com/jakelever/biowordlists) project used for this.
+There is a small test input file ([exampledata/input.bioc.xml.gz](https://github.com/jakelever/cancermine/blob/master/exampledata/input.bioc.xml.gz)). It is a gzipped file in [BioC XML format](http://bioc.sourceforge.net/), which is a format for biomedical corpora. You can run the relation extraction process with the commands below. There are also mini wordlists for test usage which are tiny subsets of the [BioWordlists project](https://github.com/jakelever/biowordlists) project used for this.
 
 ```
 # Find sentences that contain cancer types and gene names and filter using the terms in the filterTerms.txt
-python parseAndFindEntities.py --biocFile exampledata/input.bioc.xml --filterTerms filterTerms.txt --wordlistPickle exampledata/mini_terms.pickle --outSentencesFilename exampledata/intermediate_sentences.json
+python parseAndFindEntities.py --biocFile exampledata/input.bioc.xml.gz --filterTerms filterTerms.txt --wordlistPickle exampledata/mini_terms.pickle --outSentencesFilename exampledata/intermediate_sentences.json
 
 # Apply the machine learning models to identify actual mentions of drivers, oncogenes and tumor suppressors
 python applyModelsToSentences.py --models models/cancermine.driver.model,models/cancermine.oncogene.model,models/cancermine.tumorsuppressor.model --filterTerms filterTerms.txt --wordlistPickle exampledata/mini_terms.pickle --genes exampledata/mini_terms_genes.tsv --cancerTypes exampledata/mini_terms_cancers.tsv --sentenceFile exampledata/intermediate_sentences.json --outData exampledata/intermediate_relations.tsv
