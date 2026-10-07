@@ -9,6 +9,9 @@ import re
 import string
 from collections import defaultdict,Counter
 import json
+import gzip
+import bioc
+from kindred.loadFunctions import convertBiocDocToKindredDocs
 
 def now():
 	return time.strftime("%Y-%m-%d %H:%M:%S")
@@ -38,18 +41,44 @@ def filterCorpus(corpus,filterTerms):
 			filtered.addDocument(doc)
 	return filtered
 
+MAX_BLOCK_CHARS = 500000
+
+# SpaCy refuses texts over 1M characters, so split huge blocks at sentence boundaries
+def splitLongBlock(block):
+	while len(block) > MAX_BLOCK_CHARS:
+		cut = block.rfind('. ',0,MAX_BLOCK_CHARS)
+		cut = cut+1 if cut > 0 else MAX_BLOCK_CHARS
+		yield block[:cut].strip()
+		block = block[cut:]
+	yield block
+
 # Deal with table data stored in tab-delimited form
 def splitTabbedCorpus(corpus):
 	new_corpus = kindred.Corpus()
 	for doc in corpus.documents:
 		for block in doc.text.split('\t'):
 			block = block.strip()
-			if block:
-				new_doc = kindred.Document(block)
-				new_doc.metadata = doc.metadata
-				new_corpus.addDocument(new_doc)
+			for subblock in splitLongBlock(block):
+				if subblock:
+					new_doc = kindred.Document(subblock)
+					new_doc.metadata = doc.metadata
+					new_corpus.addDocument(new_doc)
 
 	return new_corpus
+
+def iterLoadBioc(path,corpusSizeCutoff=500):
+	opener = gzip.open if path.endswith('.gz') else open
+	corpus = kindred.Corpus()
+	with opener(path,'rb') as f:
+		with bioc.biocxml.iterparse(f) as parser:
+			for document in parser:
+				if len(corpus.documents) >= corpusSizeCutoff:
+					yield corpus
+					corpus = kindred.Corpus()
+				for kindredDoc in convertBiocDocToKindredDocs(document):
+					corpus.addDocument(kindredDoc)
+	if len(corpus.documents) > 0:
+		yield corpus
 
 def parseAndFindEntities(biocFile,filterTermsFile,wordlistPickle,outSentencesFilename):
 	print("%s : start" % now())
@@ -70,7 +99,7 @@ def parseAndFindEntities(biocFile,filterTermsFile,wordlistPickle,outSentencesFil
 	print("%s : processing..." % now())
 	parser = kindred.Parser()
 	ner = kindred.EntityRecognizer(lookup=termLookup,detectFusionGenes=False,detectMicroRNA=False,acronymDetectionForAmbiguity=True,mergeTerms=True)
-	for corpusno,corpus in enumerate(kindred.iterLoad('biocxml',biocFile)):
+	for corpusno,corpus in enumerate(iterLoadBioc(biocFile)):
 		# Clean any annotations already in the data
 		corpus.removeRelations()
 		corpus.removeEntities()
