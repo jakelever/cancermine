@@ -14,7 +14,7 @@ elif os.getenv('MODE') == 'test':
 	source_dir = 'test_data'
 	work_dir = 'test_working'
 
-kb_files = [ '%s/kb/%s' % (work_dir,f.replace('.bioc.xml','.tsv')) for f in os.listdir(source_dir) ]
+kb_files = [ '%s/kb/%s' % (work_dir,f.replace('.bioc.xml.gz','.tsv').replace('.bioc.xml','.tsv')) for f in os.listdir(source_dir) ]
 
 final_files =  [ f"{work_dir}/{f}" for f in ['cancermine_unfiltered.tsv','cancermine_collated.tsv','cancermine_sentences.tsv'] ]
 
@@ -27,7 +27,12 @@ rule build_models:
 
 rule get_biowordlists:
 	output: f"{work_dir}/biowordlists.flag"
-	shell: f"mkdir -p {work_dir}/biowordlists && zenodo_get -o {work_dir}/biowordlists https://doi.org/10.5281/zenodo.1286661 && touch {{output}}"
+	run:
+		local = os.getenv('BIOWORDLISTS_DIR')
+		if local:
+			shell("mkdir -p {work_dir}/biowordlists && cp %s/terms_*.tsv {work_dir}/biowordlists/ && touch {output}" % local)
+		else:
+			shell("mkdir -p {work_dir}/biowordlists && zenodo_get -o {work_dir}/biowordlists https://doi.org/10.5281/zenodo.1286661 && touch {output}")
 
 rule prepare_wordlist:
 	input: f"{work_dir}/biowordlists.flag"
@@ -36,7 +41,7 @@ rule prepare_wordlist:
 
 rule parse_and_find_entities:
 	input:
-		biocxml=f"{source_dir}/{{f}}.bioc.xml",
+		biocxml=f"{source_dir}/{{f}}.bioc.xml.gz",
 		wordlist=f"{work_dir}/cancermine_terms.pickle"
 	output: f"{work_dir}/sentenceData/{{f}}.json"
 	shell: f"python parseAndFindEntities.py --biocFile {{input.biocxml}} --filterTerms filterTerms.txt --wordlistPickle {{input.wordlist}} --outSentencesFilename {{output}}"
